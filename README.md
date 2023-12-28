@@ -1,8 +1,9 @@
 # Canopy Height Mapper
 ## Logo for the Canopy Height Mapper Google Earth Engine (CH-GEE) web app.
-![RES_LOGO_4](https://github.com/Cesarito2021/TH-GEE/assets/81155556/65470bbe-32ab-48be-bc24-159cd73ee3da)
+
 ## Interface
-<img width="960" alt="FIG_1" src="https://github.com/Cesarito2021/TH-GEE/assets/81155556/699fdee1-fc6f-4637-872d-cb279a912be9">
+
+
 
 ## Overview
 The Canopy Height Mapper is a Google Earth Engine 🌎⛰️🌳🌲web application (CH-GEE) combining Global Ecosystem Dynamics Investigation (GEDI) data with Sentinel 1/2 and topographical data. 
