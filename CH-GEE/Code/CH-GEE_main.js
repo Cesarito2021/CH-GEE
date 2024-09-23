@@ -2,7 +2,7 @@
 //********************************************* Canopy Height Mapper  *******************************************
 //***************************************************************************************************************
 
-var CanopyHeightMapper = function(aoi, year, start_date, end_date, cloudsTh, quantile, model, mask, gedi_type,
+var CanopyHeightMapper = function(aoi, year, start_date, end_date,startDateGEDI,endDateGEDI, quantile, model, mask, gedi_type,
 numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samLingRateGBM,maxNodesGBM,lossGBM,maxNodesCART,minLeafPopCART){
   
   //***************************************************************************************************************
@@ -59,7 +59,7 @@ numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samL
   //***************************************************************************************************************
   var dataset = ee.ImageCollection("LARSE/GEDI/GEDI02_A_002_MONTHLY")
   var library2 = require("users/calvites1990/CH-GEE:L2A_GEDI_source"); 
-  var gedi = library2.ToGEDI(dataset,gedi_type,quantile,FNF)
+  var gedi = library2.ToGEDI(dataset,gedi_type,startDateGEDI,endDateGEDI,quantile,FNF) 
   //***************************************************************************************************************
   //  Selecting Independent variables
   //***************************************************************************************************************
@@ -67,18 +67,17 @@ numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samL
   //  Harmonized Sentinel-2 MSI: MultiSpectral Instrument, Level-2A
   //***************************************************************************************************************
   var library3 = require("users/calvites1990/CH-GEE:Sentinel2_source");
-  var s2 = library3.calculateCompositeClip(year, start_date, end_date, cloudsTh, 20,FNF,aoi2);
+  var s2 = library3.calculateCompositeClip(year, start_date, end_date, 70, 20,FNF,aoi2);
   
   //***************************************************************************************************************
   // Global Multi-resolution Terrain Elevation Data 2010
   // Slope from Global Multi-resolution Terrain Elevation Data 2010
   //***************************************************************************************************************
-  var dem       = ee.Image("USGS/GMTED2010")
+  var dem       = ee.Image("USGS/SRTMGL1_003")//ee.Image("USGS/GMTED2010")//ee.Image('MERIT/DEM/v1_0_3');//
   var Mask      = dem.gt(0);
   var demMasked = dem.mask(Mask).rename('dem');
   var slope     = ee.Terrain.slope(demMasked );
   var aspect    = ee.Terrain.aspect(demMasked );
-
   //***************************************************************************************************************
   //  Sentinel-1
   //***************************************************************************************************************
@@ -139,6 +138,7 @@ numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samL
    var split = 0.8;
    var training = reference.filter(ee.Filter.lt('random', split));
    var validation = reference.filter(ee.Filter.gte('random', split));
+
   //***************************************************************************************************************
   // Colnames all of used variables
   //***************************************************************************************************************
@@ -176,7 +176,7 @@ numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samL
     shrinkage: ee.Number(shrGBM),
     samplingRate: ee.Number(samLingRateGBM),
     maxNodes: ee.Number(maxNodesGBM),
-    loss: ee.String(lossGBM)
+   // loss: ee.String(lossGBM)
     }).train(
     training, "rh", predictorsNames)
     .setOutputMode("Regression"); // used to predict class / continuous variables etc.
