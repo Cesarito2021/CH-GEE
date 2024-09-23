@@ -3,9 +3,12 @@
 *************************************************************************************************
 
 readme
+
 CH-GEE (Canopy Height Mapper) 
+
 The Canopy Height Mapper is a Google Earth Engine (CH-GEE) web app designed to predict canopy heights by integrating GEDI (Global Ecosystem Dynamics Investigation) RH metrics with Sentinel-1/2 data and topographical variables. This folder contains the JavaScript files necessary for the functioning of the CH-GEE app.
-Files in the Folder:
+
+# Files in the Folder:
 1.	CH-GEE_main.js
 This script is the main file that executes the entire app. It coordinates the interaction between various modules and scripts, allowing the canopy height prediction process to run automatically and rapidly.
 2.	CH-GEE_UI.js
@@ -25,6 +28,6 @@ This file contains code for accessing and processing Sentinel-1 data, which prov
 9.	Sentinel2_source.js
 This script is responsible for accessing and processing Sentinel-2 data, providing optical remote sensing data useful for canopy height estimation.
 
-Workflow Overview:
+# Workflow Overview:
 First to all, users need to define the area of interest (by drawing an AOI or uploading an AOI shapefile), select one of the three forest mask options, choose one GEDI RH metric to use as a proxy for canopy height, and set the temporal extent for the GEDI RH metric, as well as the temporal extents for Sentinel-1 and Sentinel-2. Next, users should select one of the three machine learning algorithms and specify the folder path and name for transferring the Geo TIFF to their personal drive. Finally, users need to click 'Run' again. After this, users can automatically view the map, scatter plot, and variable importance graphs.
 
