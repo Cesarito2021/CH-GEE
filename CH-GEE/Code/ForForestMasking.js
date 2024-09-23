@@ -18,7 +18,7 @@ return(FNF)
 }else if(mask=='DW'){
  var DW = ee.ImageCollection("GOOGLE/DYNAMICWORLD/V1")
                                   .filterBounds(for_aoi)
-                                  .filterDate('2022-07-01', '2023-07-01')
+                                  .filterDate('2022-06-01', '2022-10-30')
                                   .first()
  FNF = DW.select('label').eq(1)
  return(FNF)
