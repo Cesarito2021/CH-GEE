@@ -16,9 +16,6 @@ var CalculationRMSE = function(classifiedValidation) {
   var meanTrueValues = trueValues.reduce('mean', [0]).get([0]);
   var rmsePercentage = rmse.divide(meanTrueValues).multiply(100);
   
-  // Format the result string
-  //var resultString = ee.String('RMSE: ').cat(rmse.round().format('%.2f')).cat(' m (').cat(rmsePercentage.round().format('%.2f')).cat('%)');
-  //
    var resultString = ee.String('RMSE: ').cat(rmse.format('%.2f')).cat(' m (').cat(rmsePercentage.format('%.2f')).cat('%)');
   //
   return resultString;
@@ -33,9 +30,9 @@ var SCPLOT = function(dataset,RMSE){
   RMSE  = RMSE.getInfo(); 
   // Converti la FeatureCollection in punti
   var points = dataset.map(function(feature) {
-    return ee.Feature(ee.Geometry.Point([feature.get('B1'), feature.get('B2')])) // Sostituisci 'B1' e 'B2' con le colonne che desideri utilizzare come coordinate x e y
-      .set('pred', feature.get('classification')) // 'classification' è la colonna delle previsioni
-      .set('ref', feature.get('rh')) // 'rh' è la colonna delle osservazioni
+    return ee.Feature(ee.Geometry.Point([feature.get('B1'), feature.get('B2')])) 
+      .set('pred', feature.get('classification')) 
+      .set('ref', feature.get('rh')) 
   });
 // Crea uno scatter plot utilizzando i punti
   var chart = ui.Chart.feature.byFeature(points, 'ref', 'pred')
@@ -52,13 +49,13 @@ var SCPLOT = function(dataset,RMSE){
       },
       vAxes: {
         // Aggiungi titoli agli assi.
-        0: { title: 'Reference Canopy Heights', titleTextStyle: { italic: false, bold: true, fontSize: 12  } },
-        1: { title: 'Reference Canopy Heights', titleTextStyle: { italic: false, bold: true, fontSize: 12  } }
+        0: { title: 'Predicted Canopy Heights', titleTextStyle: { italic: false, bold: true, fontSize: 12  } },
+        1: { title: 'Predicted Canopy Heights', titleTextStyle: { italic: false, bold: true, fontSize: 12  } }
       },
       hAxes: {
         // Aggiungi titoli agli assi.
-        0: { title: 'Predicted Canopy Heights', titleTextStyle: { italic: false, bold: true , fontSize: 11 } },
-        1: { title: 'Predicted Canopy Heights', titleTextStyle: { italic: false, bold: true , fontSize: 11 } }
+        0: { title: 'Reference Canopy Heights', titleTextStyle: { italic: false, bold: true , fontSize: 11 } },
+        1: { title: 'Reference Canopy Heights', titleTextStyle: { italic: false, bold: true , fontSize: 11 } }
       },
       trendlines: {
         0: {
