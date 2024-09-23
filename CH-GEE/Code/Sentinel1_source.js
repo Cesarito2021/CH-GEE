@@ -12,12 +12,13 @@ var STOP_DATE= year+"-"+end_date;
       var s1 = ee.ImageCollection('COPERNICUS/S1_GRD_FLOAT')
       .filter(ee.Filter.eq('instrumentMode', 'IW'))
       .filter(ee.Filter.eq('resolution_meters', 10))
-      .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH'))
+      .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH')) // added new1
+      .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV')) // added new2
       .filterDate(START_DATE, STOP_DATE)
       .filterBounds(aoi)
-      
-      s1 = s1.select(['VV', 'VH', 'angle'])
       //
+      s1 = s1.select(['VV','VH','angle'])
+       //
       var S1_1 = s1.map(border_noise_correction.f_mask_edges);
       //
       //
@@ -40,8 +41,8 @@ var STOP_DATE= year+"-"+end_date;
             //
        var composite = ee.Image.cat([
        s3.select('VH').mean(),
-       s3.select('VV').mean(),
-       s3.select('angle').mean()]);//.focal_median();
+       s3.select('VV').mean()
+       ]);//.focal_median();
        return(composite)}
 
 exports.to_sentinel_filtered  = to_sentinel_filtered;
