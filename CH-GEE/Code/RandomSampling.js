@@ -5,16 +5,12 @@ var generateSamplingSites = function(region, cellSize, seed,mask_raster) {
   // Generate a random image of integers in the specified region and projection.
   var proj = ee.Projection("EPSG:4326").atScale(cellSize);
   var cells = ee.Image.random(seed).multiply(1000000).int().clip(region).reproject(proj);
-  // Generate another random image and select the maximum random value 
-  // in each grid cell as the sample point.
+  // 
   var random = ee.Image.random(seed).multiply(1000000).int();
   var maximum = cells.addBands(random).reduceConnectedComponents(ee.Reducer.max());
-  
   // Find all the points that are local maximums.
   var points = random.eq(maximum).selfMask().clip(region);
-  
   // Create a mask to remove every pixel with even coordinates in either X or Y.
-  // Using the double not to avoid floating point comparison issues.
   var mask_img = ee.Image.pixelCoordinates(proj)
       .expression("!((b('x') + 0.5) % 2 != 0 || (b('y') + 0.5) % 2 != 0)");
   //
@@ -34,12 +30,10 @@ var generateSamplingSites = function(region, cellSize, seed,mask_raster) {
     maxPixels: 1e9
   });
   
-// Add a buffer around each point that is the requested spacing size for visualization.
+// Add a buffer around each point
   var buffer = samples.map(function(f) { return f.buffer(ee.Number(cellSize).divide(2)) });
   
   return {
-//points: points.reproject(proj.scale(1/16, 1/16)),
-//strictPoints: strictPoints.reproject(proj.scale(1/16, 1/16)),
     buffer: buffer,
   };
 }
