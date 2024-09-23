@@ -3,7 +3,7 @@
 //***********************************************************************************************
  
  var calculateCompositeClip = function(year, startDate, endDate, cloudsTh, MaxCloudsProbability, mask_raster,geometry){
-  var startDateWithYear = year+"-"+startDate; // 2017 // "08-10" // -> "2017-08-10"
+  var startDateWithYear = year+"-"+startDate; // example: 2017 // "08-10" // -> "2017-08-10"
   var endDateWithYear = year+"-"+endDate;
   // load and filter the S2 dataset
   var S2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
