@@ -6,8 +6,8 @@ The Canopy Height Mapper is a Google Earth Engine 🌎⛰️🌳🌲web applicat
 The GEDI mission can monitor nearest Earth's forests through widespread laser shots of ~25 m of diameters (between 51.6° N and >51.6° S). 
 
 ### Accessing the Canopy Height Google Earth Engine App
-To access the Canopy Height Google Earth Engine App, click [here](https://ee-calvites1990.projects.earthengine.app/view/ch-gee).
-For a detailed description of the procedure and to view the repository, you can visit the project on GitHub [here](https://github.com/Cesarito2021/CH-GEE.git). on GitHub here.
+To access the Canopy Height Google Earth Engine App, click [here](https://ee-calvites1990.projects.earthengine.app/view/ch-gee). 
+For a detailed description of the procedure and to view the repository, you can visit the project on GitHub [here](https://github.com/Cesarito2021/CH-GEE.git).
 
 
 ## Vision
