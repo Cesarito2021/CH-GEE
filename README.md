@@ -21,7 +21,7 @@ This GEE application was initially conceived during the 2nd edition Google Earth
 
 # CH-GEE web application configuration
 # Spatial extent setting
-*Input/Output options*
+## *Input/Output options*
 Area of Interest (AOI) definition: Users can define the AOI by either 1) drawing it manually or 2) uploading a polygon in format Shapefile. For projection details, users can refer to the official GEE guide.
 ## Toggle Forest Mask 
 Users can select one of the three options for forest masks available in the CH-GEE web app: 1.Forest mask available at "GOOGLE/DYNAMICWORLD/V1" and 2. Forest mask available at "JAXA/ALOS/PALSAR/YEARLY/FNF". In contrast, the "exclude forest mask" option will assume that the full AOI is covered by forest.
