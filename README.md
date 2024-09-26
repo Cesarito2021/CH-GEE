@@ -1,6 +1,6 @@
 # Canopy Height Mapper - Google Earth Engine
 ## User Interface  
-![Suppl_fig1B](https://github.com/user-attachments/assets/2f464c28-896a-486c-b065-e944dd9e086d)
+![Suppl_fig1C](https://github.com/user-attachments/assets/ea72f603-839b-4b18-823b-9722bf81445c)
 ### Overview
 The Canopy Height Mapper is a Google Earth Engine 🌎⛰️🌳🌲web application (CH-GEE) combining Global Ecosystem Dynamics Investigation (GEDI) data with Sentinel 1/2 and topographical data. 
 The GEDI mission can monitor nearest Earth's forests through widespread laser shots of ~25 m of diameters (between 51.6° N and >51.6° S). 
@@ -35,6 +35,8 @@ Users can select between 1) single GEDI Relative Height (Rh; m) metric ranging f
 Specify the start and end dates (Year/Month/Day) for GEDI collections to access data based on the specified period. 
 ### *Temporal extent setting for Sentinel 1/2 collection* 
 Specify the start and end dates (Year/Month/Day) for the Sentinel 1/2 collection to access data based on the specified period. The cloud coverage threshold for Sentinel-2 pixels is set at 70%, as this is widely recognized as a practical limit for ensuring accurate pixel-wise analyses 
+### *Cloud threshold* 
+After setting the temporal extent for Sentinel-1 and 2, users can adjust the cloud coverage percentage for Sentinel-2 images using the 'Cloud Threshold' slider. A 70% threshold is recommended for accurate analysis and is set as the default, but this may vary depending on local weather conditions.
 ## Model parameter setting
 ### *Select and set Machine Learning (ML) algorithm*
 Users can select one of the three ML option: 1) Random Forests (RF), 2) Gradient Tree Boosting (GB), and 3) Classification and Regression Trees (CART). Hyperparameters for RF include the number of decision trees (numberOfTrees), variables per split (variablesPerSplit), minimum training samples in each leaf node (minLeafPopulation), input fraction for bagging per tree (bagFraction), and maximum leaf nodes per tree (maxNodes). For GB, parameters encompass the number of decision trees (numberOfTrees), learning rate (shrinkage), sampling rate for stochastic tree boosting (samplingRate), maximum leaf nodes per tree (maxNodes), and loss function for regression (loss). CART parameters include maximum leaf nodes per tree (maxNodes) and minimum training samples in each leaf node (minLeafPopulation).
