@@ -39,6 +39,7 @@ var u_start_date                 = startDateTexbox                 .getValue();
 var u_end_date                   = endDateTexbox                   .getValue();
 var u_startDateGEDI              = startDateGEDITexbox             .getValue();
 var u_endDateGEDI                = endDateGEDITexbox               .getValue();
+var u_cloud_threshold            = cloudThresholdSlider            .getValue();
 var u_TypePerc1                  = TypePercCheckbox1               .getValue();
 var u_quantile                   = quantileSlider                  .getValue();
 var u_TypePerc2                  = TypePercCheckbox2               .getValue();
@@ -73,6 +74,7 @@ u_maxNodesGBM           =  Number(u_maxNodesGBM           );
 u_lossGBM               =  Number(u_lossGBM               ); 
 u_maxNodesCART          =  Number(u_maxNodesCART          ); 
 u_minLeafPopCART        =  Number(u_minLeafPopCART        ); 
+u_cloud_threshold       =  Number(u_cloud_threshold       );
 u_quantile              =  "rh"+u_quantile                ;
 u_outputImgName         =  String(u_outputImgName         ); 
 u_outputFolder          =  String(u_outputFolder          ); 
@@ -106,6 +108,7 @@ u_outputFolder          =  String(u_outputFolder          );
           u_end_date                 : u_end_date,
           u_startDateGEDI            : u_startDateGEDI,
           u_endDateGEDI              : u_endDateGEDI,
+          u_cloud_threshold          : u_cloud_threshold,
           u_quantile                 : u_quantile,
           u_outputImgName            : u_outputImgName,
           u_DownloadOutput           : u_DownloadOutput, 
@@ -128,12 +131,12 @@ if(Inputs.u_chooseAoi == "Draw"){
      if(Inputs.u_choose_mask1){
        if(Inputs.u_PeriodGEDI){
        var tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date,Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  
-       Inputs.u_quantile,'RF','DW','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF,
+       Inputs.u_cloud_threshold,Inputs.u_quantile,'RF','DW','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF,
        Inputs.u_maxNodesRF,Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,
        Inputs.u_minLeafPopCART);
        }else{
          tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date,Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, 
-       Inputs.u_quantile,'RF','DW','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF,
+       Inputs.u_cloud_threshold,Inputs.u_quantile,'RF','DW','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF,
        Inputs.u_maxNodesRF,Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,
        Inputs.u_minLeafPopCART);
          
@@ -141,13 +144,13 @@ if(Inputs.u_chooseAoi == "Draw"){
      }
      else if(Inputs.u_choose_mask2){
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,Inputs.u_quantile, 
      'RF','FNF','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else{ // 100pxult
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  'rh100', 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold, 'rh100', 
      'RF','none','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
       }
@@ -156,19 +159,19 @@ if(Inputs.u_chooseAoi == "Draw"){
   else{// if(Inputs.u_TypePerc2){
     if(Inputs.u_choose_mask1){
      tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_quantile, 
+     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,Inputs.u_quantile, 
      'RF','DW','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask2){
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_quantile, 
+     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'RF','FNF','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else{ // default
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  Inputs.u_quantile, 
+     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'RF','none','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);  
       }
@@ -180,19 +183,19 @@ if(Inputs.u_chooseAoi == "Draw"){
         if(Inputs.u_TypePerc1){
      if(Inputs.u_choose_mask1){
      tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,  Inputs.u_quantile, 
      'GBM','DW','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask2){
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile,  
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  Inputs.u_cloud_threshold, Inputs.u_quantile,  
      'GBM','FNF','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else{ // default
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  'rh100', 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,Inputs.u_cloud_threshold,  'rh100', 
      'GBM','none','singleGEDI',Inputs.u_numCanopyHeightMappersRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
       }
@@ -201,19 +204,19 @@ if(Inputs.u_chooseAoi == "Draw"){
   else{// if(Inputs.u_TypePerc2){
     if(Inputs.u_choose_mask1){
      tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date, Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'GBM','DW','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask2){
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  Inputs.u_quantile,
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold, Inputs.u_quantile,
      'GBM','FNF','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else{ // default
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'GBM','none','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);  
       }
@@ -226,19 +229,19 @@ if(Inputs.u_chooseAoi == "Draw"){
      if(Inputs.u_TypePerc1){
      if(Inputs.u_choose_mask1){
      tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'CART','DW','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask2){
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,  Inputs.u_quantile, 
      'CART','FNF','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else{ // default
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   'rh100', 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,Inputs.u_cloud_threshold,   'rh100', 
      'CART','none','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
       }
@@ -247,19 +250,19 @@ if(Inputs.u_chooseAoi == "Draw"){
   else{// if(Inputs.u_TypePerc2){
     if(Inputs.u_choose_mask1){
      tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile,
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,  Inputs.u_quantile,
      'CART','DW','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask2){
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'CART','FNF','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else{ // default
           tree_heights = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'CART','none','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);  
       }
@@ -279,19 +282,19 @@ if(Inputs.u_chooseAoi == "Draw"){
    if(Inputs.u_TypePerc1){
      if(Inputs.u_choose_mask1){
        var tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date,Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  
-       Inputs.u_quantile,'RF','DW','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF,
+       Inputs.u_cloud_threshold,Inputs.u_quantile,'RF','DW','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF,
        Inputs.u_maxNodesRF,Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,
        Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask2){
           tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile,  
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,  Inputs.u_quantile,  
      'RF','FNF','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask3){//else{ // 100pxult
           tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_quantile, 
+     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'RF','none','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
       }
@@ -300,18 +303,18 @@ if(Inputs.u_chooseAoi == "Draw"){
   else{// if(Inputs.u_TypePerc2){
     if(Inputs.u_choose_mask1){
      tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,Inputs.u_cloud_threshold,  Inputs.u_quantile, 
      'RF','DW','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask2){
-          tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date,Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_quantile, // Inputs.u_scale, 
+          tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date,Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,Inputs.u_cloud_threshold, Inputs.u_quantile, // Inputs.u_scale, 
      'RF','FNF','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask3){
           tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  Inputs.u_quantile, 
+     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'RF','none','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);  
       }
@@ -323,19 +326,19 @@ if(Inputs.u_chooseAoi == "Draw"){
         if(Inputs.u_TypePerc1){
      if(Inputs.u_choose_mask1){
      tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,  Inputs.u_quantile, 
      'GBM','DW','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask2){
           tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'GBM','FNF','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask3){
           tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,  Inputs.u_quantile, 
      'GBM','none','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
       }
@@ -344,19 +347,19 @@ if(Inputs.u_chooseAoi == "Draw"){
   else{// if(Inputs.u_TypePerc2){
     if(Inputs.u_choose_mask1){
      tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_quantile, 
+     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,Inputs.u_quantile, 
      'GBM','DW','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask2){
           tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,  Inputs.u_quantile, 
      'GBM','FNF','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask3){
           tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  Inputs.u_quantile, 
+     Inputs.u_end_date, Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'GBM','none','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);  
       }
@@ -369,19 +372,19 @@ if(Inputs.u_chooseAoi == "Draw"){
      if(Inputs.u_TypePerc1){
      if(Inputs.u_choose_mask1){
      tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,  Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,Inputs.u_cloud_threshold,  Inputs.u_quantile, 
      'CART','DW','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask2){
           tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,  Inputs.u_quantile, 
+     Inputs.u_end_date, Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'CART','FNF','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask3){
           tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,  Inputs.u_quantile, 
      'CART','none','singleGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
       }
@@ -390,19 +393,19 @@ if(Inputs.u_chooseAoi == "Draw"){
   else{
     if(Inputs.u_choose_mask1){
      tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,  Inputs.u_quantile, 
+     Inputs.u_end_date, Inputs.u_cloud_threshold, Inputs.u_quantile, 
      'CART','DW','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
      else if(Inputs.u_choose_mask2){
           tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile,  
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,  Inputs.u_quantile,  
      'CART','FNF','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);
      }
     else if(Inputs.u_choose_mask3){
           tree_heights_CC = library.CanopyHeightMapper(Inputs.u_aoi, Inputs.u_year, Inputs.u_start_date, 
-     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI,   Inputs.u_quantile, 
+     Inputs.u_end_date,Inputs.u_startDateGEDI,Inputs.u_endDateGEDI, Inputs.u_cloud_threshold,  Inputs.u_quantile, 
      'CART','none','meanGEDI',Inputs.u_numTreesRF,Inputs.u_varSplitRF,Inputs.u_minLeafPopuRF,Inputs.u_bagFracRF, Inputs.u_maxNodesRF,
      Inputs.u_numTreesGBM,Inputs.u_shrGBM,Inputs.u_samLingRateGBM,Inputs.u_maxNodesGBM,Inputs.u_lossGBM,Inputs.u_maxNodesCART,Inputs.u_minLeafPopCART);  
       }
@@ -626,7 +629,13 @@ var u_outputImgNameTexbox = ui.Textbox({
     outputFolderLabel.style().set('shown', false);                       
    }
  });
- //  *****************************     Define aesthetics      ********************************************
+ //  *****************************     Define Slider buttom     ********************************************
+var cloudThresholdSlider    =  ui.Slider({min: 0, max: 100, value:70, step: 1,
+                            style:{backgroundColor : "#424457", shown: true, fontFamily: "monospace", 
+                              fontWeight: 'bold', fontSize: '18px',color: "white" , width:'200px' }});
+var cloudThresholdLabel     =  ui.Label({value: "Clouds threshold", 
+                            style:{backgroundColor : "#424457", shown: true, fontFamily: "monospace", 
+                              fontWeight: 'bold', fontSize: '18px',color: "white"   }});
 var quantileSlider          =  ui.Slider({min: 0, max: 100, value:95, step: 1,
                                style: { width: '165px', backgroundColor : "#424457", color: "white",shown: false}});
 var quantileLabel           =  ui.Label({value: "Relative height (Rh) percentile (m)", 
@@ -858,6 +867,8 @@ panel.add(KKHorizontalPanel);
 KKHorizontalPanel.add(YearTexbox);
 KKHorizontalPanel.add(startDateTexbox);
 KKHorizontalPanel.add(endDateTexbox);
+panel.add(cloudThresholdLabel);
+panel.add(cloudThresholdSlider);
 //********* Model settings *************
 panel.add(modelsettingtitle);
 // ********  SET RANDOM FORESTS *********
