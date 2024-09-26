@@ -2,8 +2,9 @@
 //********************************************* Canopy Height Mapper  *******************************************
 //***************************************************************************************************************
 
-var CanopyHeightMapper = function(aoi, year, start_date, end_date,startDateGEDI,endDateGEDI, quantile, model, mask, gedi_type,
+var CanopyHeightMapper = function(aoi, year, start_date, end_date,startDateGEDI,endDateGEDI,cloudsTh, quantile, model, mask, gedi_type,
 numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samLingRateGBM,maxNodesGBM,lossGBM,maxNodesCART,minLeafPopCART){
+  
     /*
   This main code includes the CanopyHeightMapper function, 
   which will be released publicly alongside the publication. 
