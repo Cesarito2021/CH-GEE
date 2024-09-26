@@ -20,7 +20,7 @@ The vision of the CH-GEE web app is to be the leading platform for accessing hig
 4. Francini Saverio
 
 ### Acknowledgment
-This GEE application was initially conceived during the 2nd edition Google Earth Engine Summer School organized by the Laboratory of Forest Geomatics, University of florence (September).
+This GEE application was initially conceived during the 2nd edition Google Earth Engine Summer School organized by the Laboratory of Forest Geomatics, University of florence (September 2022).
 
 # CH-GEE web application configuration
 ## Spatial extent setting
