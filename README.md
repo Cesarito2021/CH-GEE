@@ -1,7 +1,6 @@
 # Canopy Height Mapper - Google Earth Engine
 ## User Interface  
-![Suppl_fig1C](https://github.com/user-attachments/assets/ea72f603-839b-4b18-823b-9722bf81445c)4
-
+![Suppl_fig1C](https://github.com/user-attachments/assets/ea72f603-839b-4b18-823b-9722bf81445c)
 # Background and Access
 ### Accessing the Canopy Height Google Earth Engine App
 To access the Canopy Height Google Earth Engine App, click [here](https://ee-calvites1990.projects.earthengine.app/view/ch-gee). 
