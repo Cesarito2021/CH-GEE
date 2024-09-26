@@ -5,13 +5,16 @@
 The Canopy Height Mapper is a Google Earth Engine 🌎⛰️🌳🌲web application (CH-GEE) combining Global Ecosystem Dynamics Investigation (GEDI) data with Sentinel 1/2 and topographical data. 
 The GEDI mission can monitor nearest Earth's forests through widespread laser shots of ~25 m of diameters (between 51.6° N and >51.6° S). 
 
+### Vision
+The vision of the CH-GEE web app is to be the leading platform for accessing high-resolution Canopy Height maps of Earth's forests. We aim to empower individuals, organisations, and researchers worldwide with the tools and data they need to make informed decisions, protect forests, and address critical environmental challenges.
+
 ### Accessing the Canopy Height Google Earth Engine App
 To access the Canopy Height Google Earth Engine App, click [here](https://ee-calvites1990.projects.earthengine.app/view/ch-gee). 
 For a detailed description of the procedure and to view the repository, you can visit the project on GitHub [here](https://github.com/Cesarito2021/CH-GEE.git).
 
-
-### Vision
-The vision of the CH-GEE web app is to be the leading platform for accessing high-resolution Canopy Height maps of Earth's forests. We aim to empower individuals, organisations, and researchers worldwide with the tools and data they need to make informed decisions, protect forests, and address critical environmental challenges.
+### Reference
+### *CH-GEE performance assessment at local scale*
+Alvites, C.; O’Sullivan, H.; Francini, S.; Marchetti, M.; Santopuoli, G.; Chirici, G.; Lasserre, B.; Marignani, M.; Bazzato, E. High-Resolution Canopy Height Mapping: Integrating NASA’s Global Ecosystem Dynamics Investigation (GEDI) with Multi-Source Remote Sensing Data. Remote Sens. 2024, 16, 1281. https://doi.org/10.3390/rs16071281
 
 ### Developers
 1. Alvites Cesar
