@@ -7,7 +7,7 @@
 The figure is square (2700 × 2700 pixels), with three columns for Pred 1–3 and
 three rows for canopy-height maps, scatter plots and variable importance.
 
-- **Maps:** identical 6 × 6 km square centred on the Sardinia AOI centroid,
+- **Maps:** identical 6 × 6 km square centred on the AOI centroid,
   EPSG:32632. The thumbnail requests a 30 m preview; it is not a 10 m raster export.
   All three use Viridis with limits of 0–20 m. The upper limit rounds the largest test prediction across the three runs (17.89 m) up to 20 m; map values above 20 m share the upper colour.
 - **Scatter plots:** all available held-out GEDI observations from the full AOI,

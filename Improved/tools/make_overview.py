@@ -100,7 +100,7 @@ for col,(model,report) in enumerate(zip(['model1','model2','model3'],reports)):
  ax.set_title(f"Variable importance · {m['predictors_selected']}/{m['predictors_original']} retained",fontsize=10)
  ax.text(-.13,1.06,letters[6+col],transform=ax.transAxes,fontweight='bold',fontsize=14);ax.xaxis.grid(alpha=.15);ax.set_axisbelow(True)
 fig.suptitle('CH-GEE Improved | Three predictor sets',x=.065,ha='left',y=.97,fontsize=22,fontweight='medium',color='#263238')
-fig.text(.065,.935,'Sardinia · 2019 · Random Forest (500 trees) · GEDI RH95',fontsize=12,color='#64717a')
+fig.text(.065,.935,'AOI · 2019 · Random Forest (500 trees) · GEDI RH95',fontsize=12,color='#64717a')
 fig.text(.065,.026,'Maps: common square extent, 6 × 6 km crop, 30 m preview, fixed 0–20 m colour range. Scatter plots: held-out GEDI over the full AOI.\nEach workflow uses its own test split; this is an illustrative overview, not a common-test benchmark. Importance: top 15, normalised over all retained variables.',fontsize=8.8,color='#53616b',linespacing=1.6)
 out=ROOT/'figures';out.mkdir(exist_ok=True)
 fig.savefig(out/'predictor_overview.png',dpi=200,facecolor='white')

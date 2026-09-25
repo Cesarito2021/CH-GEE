@@ -20,7 +20,7 @@ The existing published app linked below remains the original version.
 
 Columns show Pred 1, Pred 2 and Pred 3. Rows show canopy height, held-out GEDI
 scatter plots and relative variable importance (top 15). The maps use the same
-6 × 6 km square crop in Sardinia, Viridis and a common height scale. Model fitting
+6 × 6 km square crop of the AOI, Viridis and a common height scale. Model fitting
 and evaluation use the full study area. These are fresh Python-interface outputs;
 each workflow has its own testing set, so the figure is illustrative rather than
 a controlled ranking. [Figure details and PDF](Improved/figures/README.md).
