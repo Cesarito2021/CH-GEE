@@ -1392,7 +1392,7 @@ function heading(title,opened) {
    }});
  var row = ui.Panel({layout:ui.Panel.Layout.flow('horizontal'),
    style:{stretch:'horizontal',backgroundColor:background,margin:'4px 0',padding:'2px 0'}});
- row.add(themedLabel(title,{fontSize:'16px',fontWeight:'normal',color:'#FFFF33',stretch:'horizontal',margin:'4px 0'}));
+ row.add(themedLabel(title,{fontSize:'18px',fontWeight:'normal',color:'#FFFF33',stretch:'horizontal',margin:'4px 0'}));
  row.add(toggle);
  sidebar.add(row); sidebar.add(body); sections.push({body:body,toggle:toggle}); panel = body;
 }
@@ -1405,20 +1405,8 @@ function text(value) { return ui.Textbox({value:String(value),style:{stretch:'ho
 function select(items,value) { return ui.Select({items:items,value:value,style:{stretch:'horizontal',margin:'0',fontSize:'14px'}}); }
 panel.add(themedLabel('Canopy Height Mapper',{fontSize:'23px',fontWeight:'normal',color:'#7ED63C'}));
 panel.add(themedLabel('CH-GEE Improved · Google Earth Engine',{fontSize:'13px',color:accent,margin:'0 0 12px'},'https://github.com/Cesarito2021/CH-GEE'));
-heading('Spatial extent settings',true);
-var mode = field('Area of interest',select(['Earth Engine asset','Draw polygon'],'Earth Engine asset'));
-var asset = field('Polygon asset ID',text('projects/ee-calvites1990/assets/aoi_sardinia_4326'));
-var drawing = appMap.drawingTools(); drawing.setShown(false);
-var draw = ui.Button({label:'Draw area of interest',style:{stretch:'horizontal',margin:'6px 0'},onClick:function() {
-  drawing.setShown(true); drawing.layers().reset(); drawing.setShape('polygon'); drawing.draw(); mode.setValue('Draw polygon');
-}});
-panel.add(draw);
-draw.style().set('shown',false);
-mode.onChange(function(value) {
- var useAsset = value === 'Earth Engine asset'; asset.fieldGroup.style().set('shown',useAsset); draw.style().set('shown',!useAsset); drawing.setShown(!useAsset);
-});
-panel.add(themedLabel('Preview limit: 30,000 ha. Original CH-GEE sampling by area.',
-  {fontSize:'13px',color:'#e2e4eb',whiteSpace:'pre-wrap'}));
+heading('Input / output data',true);
+panel.add(themedLabel('Select input data and an area of interest. View canopy height and model diagnostics; use the Code Editor function for downloads.',{fontSize:'14px',whiteSpace:'pre-wrap'}));
 heading('Data settings');
 var forest = field('Forest mask',select(['none','DW','FNF'],'none'));
 var dataset = field('Predictor set',select(Object.keys(recipes),'Pred 3 · AlphaEarth + COP + XY'));
@@ -1451,6 +1439,20 @@ var end = timeField(seasonDates,'End · MM-DD','09-30');
 var seasonNote=themedLabel('Sentinel-2 season; end date is exclusive.',{fontSize:'12px',color:'#e2e4eb',margin:'4px 0 8px',whiteSpace:'pre-wrap'});panel.add(seasonNote);
 var clouds = field('Maximum scene cloud cover (%)',ui.Slider({min:0,max:100,value:30,step:1,
  style:{stretch:'horizontal',margin:'0',color:'#ffffff',backgroundColor:background}}));
+heading('Spatial settings');
+var mode = field('Area of interest',select(['Earth Engine asset','Draw polygon'],'Earth Engine asset'));
+var asset = field('Polygon asset ID',text('projects/ee-calvites1990/assets/aoi_sardinia_4326'));
+var drawing = appMap.drawingTools(); drawing.setShown(false);
+var draw = ui.Button({label:'Draw area of interest',style:{stretch:'horizontal',margin:'6px 0'},onClick:function() {
+  drawing.setShown(true); drawing.layers().reset(); drawing.setShape('polygon'); drawing.draw(); mode.setValue('Draw polygon');
+}});
+panel.add(draw);
+draw.style().set('shown',false);
+mode.onChange(function(value) {
+ var useAsset = value === 'Earth Engine asset'; asset.fieldGroup.style().set('shown',useAsset); draw.style().set('shown',!useAsset); drawing.setShown(!useAsset);
+});
+panel.add(themedLabel('Preview limit: 30,000 ha. Original CH-GEE sampling by area.',
+  {fontSize:'13px',color:'#e2e4eb',whiteSpace:'pre-wrap'}));
 heading('Model parameter settings');
 var model = field('Algorithm',select(['RF','GBM','CART'],'RF'));
 var trees = field('Number of trees (RF / GBM)',text(500));
@@ -1580,12 +1582,9 @@ function runMapper(){
   });
  }catch(e){fail(e.message,token);}
 }
-var run=ui.Button({label:'Run canopy height mapper',onClick:runMapper,style:{stretch:'horizontal',margin:'0',color:'#287c73',fontWeight:'bold',fontSize:'14px'}});footer.add(run);
-var reset=ui.Button({label:'Reset',style:{stretch:'horizontal',margin:'6px 0'},onClick:function(){generation++;sampleCache=null;completed=null;currentReport=null;heightLayer=null;appMap.layers().reset();results.clear();results.style().set('shown',false);setMenu(true);run.setDisabled(false);setStatus('Choose an area, then run the mapper.');}});footer.add(reset);
+var run=ui.Button({label:'Run canopy height mapper',onClick:runMapper,style:{stretch:'horizontal',margin:'0',color:'#1565C0',fontWeight:'bold',fontSize:'17px'}});footer.add(run);
+var reset=ui.Button({label:'Reset',style:{stretch:'horizontal',margin:'6px 0',color:'#C62828',fontWeight:'bold',fontSize:'17px'},onClick:function(){generation++;sampleCache=null;completed=null;currentReport=null;heightLayer=null;appMap.layers().reset();results.clear();results.style().set('shown',false);setMenu(true);run.setDisabled(false);setStatus('Choose an area, then run the mapper.');}});footer.add(reset);
 status.style().set({backgroundColor:'#36384b',fontSize:'13px',margin:'4px 0'});footer.add(status);
-heading('About');
-panel.add(themedLabel('CH-GEE research and documentation',{color:accent},'https://github.com/Cesarito2021/CH-GEE'));
-panel.add(themedLabel('Viewing app. Code Editor functions are supplied separately. S1/S2 = Sentinel-1/2; COP = Copernicus topography; XY = longitude/latitude.',{fontSize:'13px',whiteSpace:'pre-wrap'}));
 sidebar.add(footer);sidebar.style().set('shown',true);mountMap();appMap.setOptions('SATELLITE');appMap.centerObject(ee.FeatureCollection(asset.getValue()));
 
 
