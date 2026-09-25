@@ -25,11 +25,25 @@ and evaluation use the full study area. These are fresh Python-interface outputs
 each workflow has its own testing set, so the figure is illustrative rather than
 a controlled ranking. [Figure details and PDF](Improved/figures/README.md).
 
+### Main code — Google Earth Engine
+
 ```javascript
 var mapper = require('users/calvites1990/CH-GEE_Improved:CH-GEE_main');
 var aoi = ee.FeatureCollection('projects/your-project/assets/your-aoi');
-mapper.runAsync({aoi:aoi, year:2019, predictor_model:'model3', model:'RF',
-  numTreesRF:500}, function(result,error) {
+
+var options = {
+  aoi: aoi,
+  year: 2019,
+  predictor_model: 'model3', // model1, model2 or model3
+  model: 'RF',              // RF, GBM or CART
+  numTreesRF: 500,
+  quantile: 'rh95',
+  mask: 'none',             // none, FNF or DW
+  startDateGEDI: '2019-01-01',
+  endDateGEDI: '2020-12-31'  // Exclusive end date
+};
+
+mapper.runAsync(options, function(result,error) {
   if (error) { print(error); return; }
   Map.centerObject(aoi);
   Map.addLayer(result.image, {min:0,max:30,
@@ -41,14 +55,37 @@ mapper.runAsync({aoi:aoi, year:2019, predictor_model:'model3', model:'RF',
 
 See [Run_And_Export.js](Improved/Run_And_Export.js) for optional 10 m Drive tasks.
 
-### Python and incoming updates
+### Main code — Python
 
-The [Python function and setup instructions](Improved/python/README.md) are included.
-Python runs the same shared Earth Engine main and returns maps, evaluation and
-predictor importance; it launches no app. A small local Node.js dependency keeps
-the implementation shared. A fully native Python translation is a future update,
-subject to numerical verification. See [release verification](Improved/validation/VERIFICATION.md)
-for tested behavior and limitations.
+Follow the [setup instructions](Improved/python/README.md), including the local
+Node.js dependency, then run this example from `Improved/python/`.
+
+```python
+import ee
+from chgee import run
+
+# ee.Authenticate()  # Run once if authentication is needed.
+ee.Initialize(project="your-earth-engine-project")
+aoi = ee.FeatureCollection("projects/your-project/assets/your-aoi")
+
+result = run(
+    aoi,
+    year=2019,
+    predictor_model="model3",  # model1, model2 or model3
+    model="RF",               # RF, GBM or CART
+    numTreesRF=500,
+    quantile="rh95",
+    mask="none",              # none, FNF or DW
+    startDateGEDI="2019-01-01",
+    endDateGEDI="2020-12-31",   # Exclusive end date
+)
+
+canopy_height = result.image
+print(result.evaluate())
+
+# Optional 10 m Drive export; start only when required.
+# tasks = result.export_to_drive(description="CH_GEE_Pred3_2019", start=True)
+```
 
 ## User Interface
 ![Image](https://github.com/user-attachments/assets/ee1e953b-e45a-46e5-a793-dab78453429c)
