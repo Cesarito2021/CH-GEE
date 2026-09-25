@@ -42,3 +42,18 @@ Python reimplementation. Live numerical parity was checked for Pred 3 only.
 Sentinel-based Python graphs were tested locally; the hosted GEE ARD dependency
 and the pinned upstream copy should be checked for changes before claiming
 cross-interface numerical parity for Pred 1/2.
+
+## Final modular deployment check
+
+The modular app also completed Pred 3 but returned a different partition:
+108 test observations, 22 selected predictors, RMSE 3.36 m, RMSE% 55.4%,
+R² 0.412 (rounded UI values). Thus the numerical match reported above applies
+to the standalone bundle check, not universally to the modular deployment.
+The source workflow is shared, but numerical parity across every execution
+path remains unconfirmed; these figures must not be pooled as one benchmark.
+
+With a short map viewport, the old chained 10 m then 100 m display reprojection
+produced a tile memory error. Removing the forced 10 m intermediate from the
+preview allowed the modular map to render successfully in that viewport.
+The exportable image is unchanged; its export scale remains 10 m. The preview
+is an approximate 100 m computation, not an exact downsample of a saved map.

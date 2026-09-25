@@ -1510,7 +1510,7 @@ function displayResult(result,report,title,area){
  appMap.layers().reset();currentReport={title:title,metrics:report.metrics,predictions:report.predictions,importance:report.importance};
  // The display is a separate graph; the returned product remains untouched.
  var coarse=result.options.predictor_model!=='model1';
- var preview=coarse?result.image.clip(result.prepared.geometry).reproject({crs:'EPSG:4326',scale:10}).reproject({crs:'EPSG:4326',scale:100}):result.image;
+ var preview=coarse?result.image.clip(result.prepared.geometry).reproject({crs:'EPSG:4326',scale:100}):result.image;
  adjustAutoRange();heightLayer=ui.Map.Layer(preview.select('predicted'),{min:0,max:maximum.getValue(),palette:plots.palettes[paletteChoice.getValue()]},'Canopy height',true);appMap.layers().add(heightLayer);
  updateDisplay();setMenu(false);drawChart();results.style().set('shown',chartToggle.getValue());
  var token=generation;ui.util.setTimeout(function(){if(token===generation)appMap.centerObject(result.prepared.geometry);},150);
@@ -1570,6 +1570,7 @@ heading('About');
 panel.add(themedLabel('CH-GEE research and documentation',{color:accent},'https://github.com/Cesarito2021/CH-GEE'));
 panel.add(themedLabel('Viewing app. Code Editor functions are supplied separately. S1/S2 = Sentinel-1/2; COP = Copernicus topography; XY = longitude/latitude.',{fontSize:'13px',whiteSpace:'pre-wrap'}));
 sidebar.add(footer);sidebar.style().set('shown',true);mountMap();appMap.setOptions('SATELLITE');appMap.centerObject(ee.FeatureCollection(asset.getValue()));
+
 
 })(entryExports);
 })(require,{});

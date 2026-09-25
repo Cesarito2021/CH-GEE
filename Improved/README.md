@@ -69,7 +69,9 @@ area-dependent sampling scales are retained:
 
 These sampling scales differ from the **10 m output grid**. Resampling terrain
 or embeddings to that grid does not create 10 m independent source information.
-Pred 2/3 use a separate 100 m display preview to reduce map rendering work;
+Pred 2/3 use a separate computation requested at 100 m for the display preview;
+it is an approximate preview, not a cached 10 m raster reduced for display.
+This avoids forcing a full 10 m calculation before drawing a coarse map;
 exports use the underlying prediction at 10 m. Pred 1 retains its original
 display behavior. The map centres on the selected AOI. Palette and display range
 changes do not retrain the model. Auto range uses displayed test predictions;
