@@ -47,6 +47,12 @@ This is a heuristic inspired by [SelectFromModel's mean threshold](https://sciki
 not Boruta, permutation importance or proof of an optimal subset. Correlated
 predictors can share importance. Testing observations do not select variables.
 
+Google's [embedding catalogue](https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_SATELLITE_EMBEDDING_V1_ANNUAL)
+recommends using all 64 dimensions together. The requested reduced Pred 3 set
+is therefore an application-specific experiment, not a recommendation from the
+dataset authors; its local results should not be treated as general validation
+of embedding-dimension selection.
+
 ## Sampling and resolution
 
 The regional workflow samples within distributed buffers; it does not guarantee
@@ -90,8 +96,8 @@ mapper.runAsync({aoi:aoi, year:2019, predictor_model:'model3', model:'RF',
 ```
 
 `runAsync` materializes samples before fitting, like the app. `run` creates a
-deferred computation for batch use. These execution modes may produce different
-sample tables because of server execution/projection behavior; use the same mode
+deferred computation for batch use. Live checks found different sample tables
+between these execution modes; the precise cause was not isolated. Use the same mode
 when reproducing results. Training/testing counts and selected variables are
 returned for auditing. App runs with identical settings reuse completed results;
 changing only model hyperparameters reuses extracted predictor rows.
