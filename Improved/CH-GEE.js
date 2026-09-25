@@ -44,8 +44,7 @@ function text(value) { return ui.Textbox({value:String(value),style:{stretch:'ho
 function select(items,value) { return ui.Select({items:items,value:value,style:{stretch:'horizontal',margin:'0',fontSize:'14px'}}); }
 panel.add(themedLabel('Canopy Height Mapper',{fontSize:'23px',fontWeight:'normal',color:'#7ED63C'}));
 panel.add(themedLabel('CH-GEE Improved · Google Earth Engine',{fontSize:'13px',color:accent,margin:'0 0 12px'},'https://github.com/Cesarito2021/CH-GEE'));
-heading('Input / output data',true);
-panel.add(themedLabel('Select input data and an area of interest. View canopy height and model diagnostics; use the Code Editor function for downloads.',{fontSize:'14px',whiteSpace:'pre-wrap'}));
+panel.add(themedLabel('Input / output data',{fontSize:'18px',color:'#FFFF33',margin:'8px 0'}));
 heading('Data settings');
 var forest = field('Forest mask',select(['none','DW','FNF'],'none'));
 var dataset = field('Predictor set',select(Object.keys(recipes),'Pred 3 · AlphaEarth + COP + XY'));
@@ -78,7 +77,7 @@ var end = timeField(seasonDates,'End · MM-DD','09-30');
 var seasonNote=themedLabel('Sentinel-2 season; end date is exclusive.',{fontSize:'12px',color:'#e2e4eb',margin:'4px 0 8px',whiteSpace:'pre-wrap'});panel.add(seasonNote);
 var clouds = field('Maximum scene cloud cover (%)',ui.Slider({min:0,max:100,value:30,step:1,
  style:{stretch:'horizontal',margin:'0',color:'#ffffff',backgroundColor:background}}));
-heading('Spatial settings');
+heading('Spatial settings',true);
 var mode = field('Area of interest',select(['Earth Engine asset','Draw polygon'],'Earth Engine asset'));
 var asset = field('Polygon asset ID',text('projects/ee-calvites1990/assets/aoi_sardinia_4326'));
 var drawing = appMap.drawingTools(); drawing.setShown(false);
