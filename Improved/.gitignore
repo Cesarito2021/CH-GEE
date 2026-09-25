@@ -5,3 +5,7 @@ __pycache__/
 *.pyc
 .env
 credentials*
+
+# Local Earth Engine figure cache
+validation/overview/
+

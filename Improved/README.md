@@ -4,6 +4,14 @@ Canopy height mapping with three predictor sets, a single-map Earth Engine UI,
 and a Python function for the same Earth Engine workflow. This is a separate
 version: the published CH-GEE and the experimental V1 are preserved.
 
+## Three-predictor overview
+
+![Square overview of the three canopy-height maps, testing scatter plots and variable importance](figures/predictor_overview.png)
+
+Each column is a predictor set. Rows show canopy height, testing scatter plots
+and variable importance. The three maps use an identical 6 × 6 km crop;
+training and evaluation use the full AOI. [Figure details](figures/README.md).
+
 ## Access and account setup
 
 1. Use a Google account and [register a Cloud project for Earth Engine](https://developers.google.com/earth-engine/guides/access).

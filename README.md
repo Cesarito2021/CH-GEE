@@ -14,6 +14,17 @@ Open the [Improved Earth Engine scripts](https://code.earthengine.google.com/?ac
 if shared with you, or paste [the standalone app](Improved/dist/CH-GEE.js) into a new Code Editor script.
 The existing published app linked below remains the original version.
 
+### Three-predictor overview
+
+![Square nine-panel overview: canopy-height maps, testing scatter plots and variable importance for three predictor sets](Improved/figures/predictor_overview.png)
+
+Columns show Pred 1, Pred 2 and Pred 3. Rows show canopy height, held-out GEDI
+scatter plots and relative variable importance (top 15). The maps use the same
+6 × 6 km square crop in Sardinia, Viridis and a common height scale. Model fitting
+and evaluation use the full study area. These are fresh Python-interface outputs;
+each workflow has its own testing set, so the figure is illustrative rather than
+a controlled ranking. [Figure details and PDF](Improved/figures/README.md).
+
 ```javascript
 var mapper = require('users/calvites1990/CH-GEE_Improved:CH-GEE_main');
 var aoi = ee.FeatureCollection('projects/your-project/assets/your-aoi');
