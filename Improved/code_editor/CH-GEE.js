@@ -58,20 +58,36 @@ mode.onChange(function(value) {
 });
 panel.add(themedLabel('Preview limit: 30,000 ha. Original CH-GEE sampling by area.',
   {fontSize:'13px',color:'#e2e4eb',whiteSpace:'pre-wrap'}));
-var forest = field('Forest mask',select(['none','DW','FNF'],'none'));
 heading('Data settings');
+var forest = field('Forest mask',select(['none','DW','FNF'],'none'));
 var dataset = field('Predictor set',select(Object.keys(recipes),'Pred 3 · AlphaEarth + COP + XY'));
 var recipeNote = themedLabel('',{fontSize:'14px',whiteSpace:'pre-wrap',margin:'8px 0'}); panel.add(recipeNote);
 var rh = field('GEDI target · relative height',select(['rh75','rh90','rh95','rh98','rh100','Mean RH75/90/95/100'],'rh95'));
 var beams = field('GEDI beams',select(['All beams','Strong / full power','Weak / coverage'],'All beams'));
 var acquisition = field('GEDI acquisition',select(['Day + night','Nighttime','Daytime'],'Day + night'));
 panel.add(themedLabel('Quality filtering: quality flag = 1; degrade flag = 0. Pred 2 and 3: reference RH ≤ 50 m.',{fontSize:'13px',whiteSpace:'pre-wrap'}));
-heading('Temporal extent settings');
-var year = field('Predictor year',text(2019));
-var start = field('Optical season start (MM-DD)',text('04-01'));
-var end = field('Optical season end (exclusive, MM-DD)',text('09-30'));
-var gs = field('GEDI start (YYYY-MM-DD)',text('2019-01-01'));
-var ge = field('GEDI end (exclusive, YYYY-MM-DD)',text('2020-12-31'));
+// Matching date boxes; GEDI dates are independent and may span several years.
+function timeRow() {
+ var row=ui.Panel({layout:ui.Panel.Layout.flow('horizontal'),style:{backgroundColor:background,margin:'0',padding:'0',stretch:'horizontal'}});
+ panel.add(row);return row;
+}
+function timeField(row,label,value) {
+ var group=ui.Panel({style:{backgroundColor:background,width:'170px',margin:'0 4px 0 0',padding:'0'}});
+ group.add(themedLabel(label,{fontSize:'14px',color:'#80c3d4',margin:'8px 0 4px'}));
+ var input=text(value);input.style().set({height:'32px',padding:'0'});
+ group.add(input);row.add(group);input.fieldGroup=group;return input;
+}
+panel.add(themedLabel('GEDI reference period',{fontSize:'14px',color:'#FFFF33',margin:'12px 0 0'}));
+var gediDates=timeRow();
+var gs = timeField(gediDates,'Start · YYYY-MM-DD','2019-01-01');
+var ge = timeField(gediDates,'End · YYYY-MM-DD','2020-12-31');
+panel.add(themedLabel('May span multiple years. End date is exclusive.',{fontSize:'12px',color:'#e2e4eb',margin:'4px 0 8px',whiteSpace:'pre-wrap'}));
+panel.add(themedLabel('Predictor period',{fontSize:'14px',color:'#FFFF33',margin:'12px 0 0'}));
+var year = timeField(timeRow(),'Map year',2019);
+var seasonDates=timeRow();
+var start = timeField(seasonDates,'Start · MM-DD','04-01');
+var end = timeField(seasonDates,'End · MM-DD','09-30');
+var seasonNote=themedLabel('Sentinel-2 season; end date is exclusive.',{fontSize:'12px',color:'#e2e4eb',margin:'4px 0 8px',whiteSpace:'pre-wrap'});panel.add(seasonNote);
 var clouds = field('Maximum scene cloud cover (%)',ui.Slider({min:0,max:100,value:30,step:1,
  style:{stretch:'horizontal',margin:'0',color:'#ffffff',backgroundColor:background}}));
 heading('Model parameter settings');
@@ -98,6 +114,7 @@ var selectionNote=themedLabel('',{fontSize:'13px',whiteSpace:'pre-wrap'});panel.
 function updateRecipe(){
  var entry=recipes[dataset.getValue()],sentinel=entry.id!=='model3',original=entry.id==='model1';recipeNote.setValue(entry.note);
  [start,end,clouds].forEach(function(w){w.fieldGroup.style().set('shown',sentinel);});
+ seasonDates.style().set('shown',sentinel);seasonNote.style().set('shown',sentinel);
  [beams,acquisition].forEach(function(w){w.fieldGroup.style().set('shown',!original);});
  selectionNote.setValue(original?'Original predictor set: all 17 variables; original 70/30 split.':'Variable selection: retain at least mean importance. Training/testing: 70/30.');
 }
