@@ -1,4 +1,44 @@
 # Canopy Height Mapper - Google Earth Engine
+
+## CH-GEE Improved — new single-map version
+
+The separate [Improved release](Improved/README.md) adds three predictor sets:
+the original Sentinel-1/2 + GMTED workflow, Sentinel-1/2 + Copernicus terrain +
+coordinates, and annual AlphaEarth + terrain + coordinates. The latter two
+use buffered sampling and training-only mean-importance selection. The single-map
+UI retains the CH-GEE colours and expandable sections. Downloads are available
+through the functions, not through the viewing UI. This release excludes conformal.
+
+Start with [account access, AOI setup and the new function](Improved/README.md).
+Open the [Improved Earth Engine scripts](https://code.earthengine.google.com/?accept_repo=users/calvites1990/CH-GEE_Improved)
+if shared with you, or paste [the standalone app](Improved/dist/CH-GEE.js) into a new Code Editor script.
+The existing published app linked below remains the original version.
+
+```javascript
+var mapper = require('users/calvites1990/CH-GEE_Improved:CH-GEE_main');
+var aoi = ee.FeatureCollection('projects/your-project/assets/your-aoi');
+mapper.runAsync({aoi:aoi, year:2019, predictor_model:'model3', model:'RF',
+  numTreesRF:500}, function(result,error) {
+  if (error) { print(error); return; }
+  Map.centerObject(aoi);
+  Map.addLayer(result.image, {min:0,max:30,
+    palette:['440154','443983','31688e','21918c','35b779','90d743','fde725']},
+    'Canopy height (m)');
+  print('Evaluation', result.metrics);
+});
+```
+
+See [Run_And_Export.js](Improved/Run_And_Export.js) for optional 10 m Drive tasks.
+
+### Python and incoming updates
+
+The [Python function and setup instructions](Improved/python/README.md) are included.
+Python runs the same shared Earth Engine main and returns maps, evaluation and
+predictor importance; it launches no app. A small local Node.js dependency keeps
+the implementation shared. A fully native Python translation is a future update,
+subject to numerical verification. See [release verification](Improved/validation/VERIFICATION.md)
+for tested behavior and limitations.
+
 ## User Interface
 ![Image](https://github.com/user-attachments/assets/ee1e953b-e45a-46e5-a793-dab78453429c)
 ## Background and Access
@@ -13,7 +53,7 @@ The GEDI mission can monitor nearest Earth's forests through widespread laser sh
 ## Vision
 The vision of the CH-GEE web app is to be the leading platform for accessing high-resolution Canopy Height maps of Earth's forests. We aim to empower individuals, organisations, and researchers worldwide with the tools and data they need to make informed decisions, protect forests, and address critical environmental challenges.
 
-## Tutorial 
+## Tutorial — original published version
 Note: if the area of interest is larger than 10,000 grid dimension and the GeoTIFF file exceeds 32 MB, please follow this code:
 
 ### Step 1: Setting the CH-GEE function

@@ -1,0 +1,7 @@
+node_modules/
+.python-deps/
+.venv/
+__pycache__/
+*.pyc
+.env
+credentials*

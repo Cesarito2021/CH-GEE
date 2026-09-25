@@ -1,0 +1,8 @@
+{
+  "name": "ch-gee-improved",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared Earth Engine computation for the GEE and Python interfaces",
+  "scripts": {"build": "node tools/build.cjs", "test": "node tests/test_graphs.cjs && node tests/test_ui.cjs"},
+  "dependencies": {"@google/earthengine": "1.7.45"}
+}
