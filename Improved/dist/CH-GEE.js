@@ -1272,16 +1272,16 @@ exports.scatterFromRows = function(rows) {
     hAxis:{title:'GEDI height (m)',textStyle:{color:'#37474f'},titleTextStyle:{color:'#263238'}},vAxis:{title:'Predicted height (m)',textStyle:{color:'#37474f'},titleTextStyle:{color:'#263238'}},
     chartArea:{left:48,top:35,width:'72%',height:'65%'}}}));
 };
-exports.importanceFromValues = function(values) {
+exports.importanceFromValues = function(values,selectedPredictors) {
   if (!values || !Object.keys(values).length) return ui.Label('Importance is unavailable for this algorithm.');
-  var allKeys = Object.keys(values).filter(function(k) { return typeof values[k] === 'number' && isFinite(values[k]) && values[k] >= 0; });
+  var allKeys = Object.keys(values).filter(function(k) { return (!selectedPredictors || selectedPredictors.indexOf(k)!==-1) && typeof values[k] === 'number' && isFinite(values[k]) && values[k] >= 0; });
   var total = allKeys.reduce(function(sum,k) { return sum+values[k]; },0);
   if (!total) return ui.Label('No positive predictor importance is available.');
-  var keys = allKeys.sort(function(a,b) { return values[b]-values[a]; }).slice(0,15);
+  var keys = allKeys.sort(function(a,b) { return values[b]-values[a]; });
   var data = [['Predictor','Relative importance (%)']];
   keys.forEach(function(k) { data.push([k,100*values[k]/total]); });
   return transparentChart(ui.Chart({dataTable:data,chartType:'BarChart',downloadable:false,options:{
-    backgroundColor:{fill:'transparent'},titleTextStyle:{color:'#263238'},hAxis:{title:'Relative importance (%)',textStyle:{color:'#37474f'}},vAxis:{textStyle:{color:'#37474f'}},title:'Predictor importance · top 15',height:240,legend:{position:'none'},colors:['#287c73'],
+    backgroundColor:{fill:'transparent'},titleTextStyle:{color:'#263238'},hAxis:{title:'Relative importance (%)',textStyle:{color:'#37474f'}},vAxis:{textStyle:{color:'#37474f'}},title:'Final model · variable importance',height:Math.max(240,keys.length*23+75),legend:{position:'none'},colors:['#287c73'],
     chartArea:{left:100,top:38,width:'62%',height:'76%'}}}));
 };
 exports.scatter = function(validation) {
@@ -1337,7 +1337,7 @@ exports.scalecolor = function(min,max,image,label) {
 exports.mapLegend = function(colors,title,max) {
   var swatches=ui.Panel({layout:ui.Panel.Layout.flow('horizontal'),style:{stretch:'horizontal',backgroundColor:'#ffffff00',margin:'0'}});
   colors.forEach(function(color) { swatches.add(ui.Label('',{backgroundColor:'#'+color,height:'9px',stretch:'horizontal',margin:'0',padding:'0'})); });
-  return ui.Panel([ui.Label(title,{fontWeight:'bold',fontSize:'11px',margin:'4px 0',backgroundColor:'#ffffff00'}),swatches,
+  return ui.Panel([ui.Label(title,{fontWeight:'bold',fontSize:'12px',margin:'4px 0',backgroundColor:'#ffffff00',textAlign:'center',stretch:'horizontal'}),swatches,
     ui.Panel([ui.Label('0',{fontSize:'10px',margin:'2px 0',backgroundColor:'#ffffff00',stretch:'horizontal'}),ui.Label(max+' m',{fontSize:'10px',margin:'2px 0',backgroundColor:'#ffffff00',textAlign:'right',stretch:'horizontal'})],ui.Panel.Layout.flow('horizontal'),{backgroundColor:'#ffffff00',stretch:'horizontal',margin:'0'})],null,{backgroundColor:'#ffffff00',margin:'0'});
 };
 
@@ -1365,7 +1365,7 @@ var panel = ui.Panel({style:{width:'410px',padding:'12px',backgroundColor:backgr
 var sidebar = panel;
 var sections = [];
 var footer = ui.Panel({style:{padding:'6px',margin:'6px 0',backgroundColor:'#36384b'}});
-var results = ui.Panel({style:{position:'bottom-left',width:'370px',maxHeight:'390px',backgroundColor:'#fffffff0',padding:'10px',shown:false}});
+var results = ui.Panel({style:{position:'bottom-left',width:'370px',maxHeight:'420px',backgroundColor:'#ffffffdf',padding:'10px',shown:false}});
 var status = themedLabel('',{color:'#e2e4eb',whiteSpace:'pre-wrap'});
 function heading(title,opened) {
  var body = ui.Panel({style:{shown:!!opened,backgroundColor:background,margin:'0',padding:'0 4px'}});
@@ -1477,22 +1477,32 @@ heading('Map display');
 var paletteChoice=field('Colour palette',select(['Viridis','Forest','CH-GEE classic'],'Viridis'));
 var displayMaximum=30;
 var heightLayer=null,currentReport=null,generation=0,sampleCache=null,completed=null;
-var legend=ui.Panel(),chartChoice=select(['Scatter plot','Variable importance','Metrics'],'Scatter plot');
+var legend=ui.Panel(),chartChoice=select(['Summary table','Scatter plot','Variable importance'],'Scatter plot');
 var progress=ui.Label('',{fontSize:'13px',whiteSpace:'pre-wrap',backgroundColor:'#ffffff00'});
 function setStatus(value){status.setValue(value);progress.setValue(value);}
 function mountMap(){appMap.style().set({stretch:'both',width:sidebar.style().get('shown')?'calc(100% - 410px)':'100%'});ui.root.widgets().reset([appMap,sidebar]);}
 function setMenu(shown){var changed=sidebar.style().get('shown')!==shown;sidebar.style().set('shown',shown);drawing.setShown(shown&&mode.getValue()==='Draw polygon');if(changed)mountMap();}
 function format(value,digits){return typeof value==='number'&&isFinite(value)?value.toFixed(digits):'—';}
 function chartLabel(value){return ui.Label(value,{fontSize:'14px',color:'#263238',backgroundColor:'#ffffff00',whiteSpace:'pre-wrap',margin:'3px 0'});}
+function metricRow(name,value){
+ var label=chartLabel(name),number=chartLabel(value);
+ label.style().set({width:'155px',fontWeight:'bold'});number.style().set('stretch','horizontal');
+ return ui.Panel([label,number],ui.Panel.Layout.flow('horizontal'),{backgroundColor:'#ffffff00',stretch:'horizontal',margin:'0',padding:'3px 0',border:'0px'});
+}
 function drawChart(){
  results.clear();if(!currentReport)return;var m=currentReport.metrics;
- results.add(chartLabel(currentReport.title+'\nRMSE '+format(m.rmse_m,2)+' m · '+format(m.rmse_percent,1)+'% · R² '+format(m.r2,3)));
- results.add(chartLabel('Predictors: '+m.predictors_selected+' / '+m.predictors_original));
+ var title=chartLabel(currentReport.title);title.style().set({fontWeight:'bold',color:'#287c73'});results.add(title);
  if(chartChoice.getValue()==='Scatter plot'){
+  var scores=chartLabel('RMSE: '+format(m.rmse_m,2)+' m  |  '+format(m.rmse_percent,1)+'%  |  R²: '+format(m.r2,3));scores.style().set('fontWeight','bold');results.add(scores);
   results.add(plots.scatterFromRows(currentReport.predictions));
   if(m.test_n>currentReport.predictions.length)results.add(chartLabel('Chart: first '+currentReport.predictions.length+' test rows. Metrics use all test rows.'));
- }else if(chartChoice.getValue()==='Variable importance')results.add(plots.importanceFromValues(currentReport.importance));
- else results.add(chartLabel('Training: '+m.training_n+' · Testing: '+m.test_n+'\nMAE: '+format(m.mae_m,2)+' m · Bias: '+format(m.bias_m,2)+' m\n'+(m.selected_predictors||[]).join(', ')));
+ }else if(chartChoice.getValue()==='Variable importance'){
+  results.add(metricRow('Final predictors',m.predictors_selected+' / '+m.predictors_original));
+  results.add(plots.importanceFromValues(currentReport.importance,m.selected_predictors));
+ }else{
+  [['RMSE',format(m.rmse_m,2)+' m'],['RMSE (%)',format(m.rmse_percent,1)+'%'],['R²',format(m.r2,3)],['MAE',format(m.mae_m,2)+' m'],['Bias',format(m.bias_m,2)+' m'],['Training points',String(m.training_n)],['Test points',String(m.test_n)],['Final predictors',m.predictors_selected+' / '+m.predictors_original]].forEach(function(row){results.add(metricRow(row[0],row[1]));});
+  var variables=chartLabel('Variables used');variables.style().set('fontWeight','bold');results.add(variables);results.add(chartLabel((m.selected_predictors||[]).join(', ')));
+ }
 }
 function adjustAutoRange(){
  if(!currentReport)return;
@@ -1502,15 +1512,14 @@ function adjustAutoRange(){
 function updateDisplay(){
  var colors=plots.palettes[paletteChoice.getValue()],upper=displayMaximum;
  if(heightLayer)heightLayer.setVisParams({min:0,max:upper,palette:colors});
- legend.clear();legend.add(plots.mapLegend(colors,'Canopy height',upper));
+ legend.clear();legend.add(plots.mapLegend(colors,'Canopy height (m)',upper));
 }
 paletteChoice.onChange(updateDisplay);
-var chartToggle=ui.Checkbox({label:'Show results',value:true,onChange:function(value){results.style().set('shown',value&&!!currentReport);}});
-chartChoice.onChange(function(){drawChart();if(currentReport){chartToggle.setValue(true,false);results.style().set('shown',true);}});
+chartChoice.onChange(function(){drawChart();results.style().set('shown',!!currentReport);});
 var controls=ui.Panel({style:{position:'top-left',width:'230px',padding:'8px',backgroundColor:'#fffffff0'}});
-controls.add(ui.Label('CANOPY HEIGHT',{fontWeight:'bold',color:'#287c73',margin:'0 0 6px'}));
-controls.add(ui.Button({label:'Settings',onClick:function(){setMenu(!sidebar.style().get('shown'));},style:{stretch:'horizontal',margin:'0 0 4px'}}));
-controls.add(legend);controls.add(chartChoice);controls.add(chartToggle);controls.add(progress);appMap.add(controls);appMap.add(results);updateDisplay();
+controls.add(ui.Label('CH-GEE · Canopy Height',{fontWeight:'bold',color:'#287c73',margin:'0 0 6px',textAlign:'center',stretch:'horizontal',backgroundColor:'#ffffff00'}));
+controls.add(ui.Button({label:'CH-GEE menu',onClick:function(){setMenu(!sidebar.style().get('shown'));},style:{stretch:'horizontal',margin:'0 0 4px'}}));
+controls.add(legend);controls.add(ui.Label('Results',{fontWeight:'bold',textAlign:'center',stretch:'horizontal',backgroundColor:'#ffffff00',margin:'6px 0 2px'}));controls.add(chartChoice);controls.add(progress);appMap.add(controls);appMap.add(results);updateDisplay();
 function fail(message,token){if(token!==generation)return;setMenu(true);setStatus('Unable to complete: '+message);run.setDisabled(false);}
 function displayResult(result,report,title,area){
  appMap.layers().reset();currentReport={title:title,metrics:report.metrics,predictions:report.predictions,importance:report.importance};
@@ -1518,7 +1527,7 @@ function displayResult(result,report,title,area){
  var coarse=result.options.predictor_model!=='model1';
  var preview=coarse?result.image.clip(result.prepared.geometry).reproject({crs:'EPSG:4326',scale:30}):result.image;
  adjustAutoRange();heightLayer=ui.Map.Layer(preview.select('predicted'),{min:0,max:displayMaximum,palette:plots.palettes[paletteChoice.getValue()]},'Canopy height',true);appMap.layers().add(heightLayer);
- updateDisplay();setMenu(false);drawChart();results.style().set('shown',chartToggle.getValue());
+ updateDisplay();setMenu(false);drawChart();results.style().set('shown',true);
  var token=generation;ui.util.setTimeout(function(){if(token===generation)appMap.centerObject(result.prepared.geometry);},150);
  setStatus('Ready · '+Math.round(area/10000).toLocaleString()+' ha · '+report.metrics.test_n+' test points'+(coarse?'\nPreview: 30 m · product: 10 m':''));
  print('CH-GEE Improved · evaluation',report.metrics);run.setDisabled(false);

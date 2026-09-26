@@ -24,4 +24,13 @@ ctx.trees.setValue('250');ctx.runMapper();assert.equal(graphs.length,before+1);p
 ctx.reset.o.onClick();ctx.runMapper();ctx.reset.o.onClick();pending.shift()(1000000,null);assert.equal(pending.length,0,'Reset discards late callbacks');
 ctx.dataset.setValue('Pred 1 · S1 + S2 + GMTED');ctx.runMapper();pending.shift()(1000000,null);assert.equal(pending.length,1,'Original goes directly to evaluation, without improved sampling');pending.shift()(report,null);
 console.log('PASS: one map, two predictors, original dispatch, slider, cache, palette and stale-response protection.');
+assert.equal(typeof ctx.chartToggle,'undefined');
+assert.deepEqual(Array.from(ctx.chartChoice.o.items),['Summary table','Scatter plot','Variable importance']);
+for(const choice of ['Summary table','Variable importance','Scatter plot']){ctx.chartChoice.setValue(choice);ctx.chartChoice.change();assert.equal(ctx.results.style().get('shown'),true);}
+const plots=load('users/calvites1990/CH-GEE_Improved:ForPlots');
+const importance=plots.importanceFromValues({retainedA:3,retainedB:1,discarded:100},['retainedA','retainedB']);
+assert.equal(importance.o.dataTable.length,3);assert.equal(importance.o.dataTable[1][1],75);assert.equal(importance.o.dataTable[2][1],25);
+const many=Object.fromEntries(Array.from({length:19},(_,i)=>['b'+i,i+1]));
+assert.equal(plots.importanceFromValues(many).o.dataTable.length,20,'Display every final predictor, not only the top 15');
+console.log('PASS: result selector, visible summary and final-model importance with all retained predictors.');
 

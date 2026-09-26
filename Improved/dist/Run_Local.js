@@ -1272,16 +1272,16 @@ exports.scatterFromRows = function(rows) {
     hAxis:{title:'GEDI height (m)',textStyle:{color:'#37474f'},titleTextStyle:{color:'#263238'}},vAxis:{title:'Predicted height (m)',textStyle:{color:'#37474f'},titleTextStyle:{color:'#263238'}},
     chartArea:{left:48,top:35,width:'72%',height:'65%'}}}));
 };
-exports.importanceFromValues = function(values) {
+exports.importanceFromValues = function(values,selectedPredictors) {
   if (!values || !Object.keys(values).length) return ui.Label('Importance is unavailable for this algorithm.');
-  var allKeys = Object.keys(values).filter(function(k) { return typeof values[k] === 'number' && isFinite(values[k]) && values[k] >= 0; });
+  var allKeys = Object.keys(values).filter(function(k) { return (!selectedPredictors || selectedPredictors.indexOf(k)!==-1) && typeof values[k] === 'number' && isFinite(values[k]) && values[k] >= 0; });
   var total = allKeys.reduce(function(sum,k) { return sum+values[k]; },0);
   if (!total) return ui.Label('No positive predictor importance is available.');
-  var keys = allKeys.sort(function(a,b) { return values[b]-values[a]; }).slice(0,15);
+  var keys = allKeys.sort(function(a,b) { return values[b]-values[a]; });
   var data = [['Predictor','Relative importance (%)']];
   keys.forEach(function(k) { data.push([k,100*values[k]/total]); });
   return transparentChart(ui.Chart({dataTable:data,chartType:'BarChart',downloadable:false,options:{
-    backgroundColor:{fill:'transparent'},titleTextStyle:{color:'#263238'},hAxis:{title:'Relative importance (%)',textStyle:{color:'#37474f'}},vAxis:{textStyle:{color:'#37474f'}},title:'Predictor importance · top 15',height:240,legend:{position:'none'},colors:['#287c73'],
+    backgroundColor:{fill:'transparent'},titleTextStyle:{color:'#263238'},hAxis:{title:'Relative importance (%)',textStyle:{color:'#37474f'}},vAxis:{textStyle:{color:'#37474f'}},title:'Final model · variable importance',height:Math.max(240,keys.length*23+75),legend:{position:'none'},colors:['#287c73'],
     chartArea:{left:100,top:38,width:'62%',height:'76%'}}}));
 };
 exports.scatter = function(validation) {
@@ -1337,7 +1337,7 @@ exports.scalecolor = function(min,max,image,label) {
 exports.mapLegend = function(colors,title,max) {
   var swatches=ui.Panel({layout:ui.Panel.Layout.flow('horizontal'),style:{stretch:'horizontal',backgroundColor:'#ffffff00',margin:'0'}});
   colors.forEach(function(color) { swatches.add(ui.Label('',{backgroundColor:'#'+color,height:'9px',stretch:'horizontal',margin:'0',padding:'0'})); });
-  return ui.Panel([ui.Label(title,{fontWeight:'bold',fontSize:'11px',margin:'4px 0',backgroundColor:'#ffffff00'}),swatches,
+  return ui.Panel([ui.Label(title,{fontWeight:'bold',fontSize:'12px',margin:'4px 0',backgroundColor:'#ffffff00',textAlign:'center',stretch:'horizontal'}),swatches,
     ui.Panel([ui.Label('0',{fontSize:'10px',margin:'2px 0',backgroundColor:'#ffffff00',stretch:'horizontal'}),ui.Label(max+' m',{fontSize:'10px',margin:'2px 0',backgroundColor:'#ffffff00',textAlign:'right',stretch:'horizontal'})],ui.Panel.Layout.flow('horizontal'),{backgroundColor:'#ffffff00',stretch:'horizontal',margin:'0'})],null,{backgroundColor:'#ffffff00',margin:'0'});
 };
 
