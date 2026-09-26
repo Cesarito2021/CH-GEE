@@ -17,7 +17,16 @@ function date(value,name){
 exports.normalize=function(input){
  input=input||{};if(!input.aoi)throw new Error('An area of interest is required.');
  var o={aoi:input.aoi};
- o.predictor_model=choice(input.predictor_model,'model2',['model1','model2'],'predictor set');
+ // Public terminology: predictor_set identifies input data; model identifies RF/GBM/CART.
+ // Retain the old predictor_model identifiers internally for existing callers.
+ var recipe=input.predictor_model;
+ if(input.predictor_set!==undefined){
+  var set=choice(input.predictor_set,'pred2',['pred1','pred2'],'predictor set');
+  var mapped=set==='pred1'?'model1':'model2';
+  if(recipe!==undefined&&recipe!==mapped)throw new Error('Conflicting predictor set options');
+  recipe=mapped;
+ }
+ o.predictor_model=choice(recipe,'model2',['model1','model2'],'predictor set');
  var original=o.predictor_model==='model1';
  o.pipeline_version=original?'original':'improved';
  o.dataset_option='S2S1';

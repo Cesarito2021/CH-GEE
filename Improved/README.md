@@ -72,14 +72,14 @@ the display range is always automatic and does not clip exported heights.
 
 ## Run the Earth Engine function
 
-`Run_Local.js` displays the map, evaluation, scatter plot and importance.
+`Run_Local.js` runs the main without an app and prints evaluation, scatter plot and importance in the Code Editor console. The map is not displayed unless `showMap=true`.
 `Run_And_Export.js` creates optional Drive tasks. The app itself has no download
 button. Use the matching files in `dist/` to run without installing all modules.
 
 ```javascript
 var mapper = require('users/calvites1990/CH-GEE_Improved:CH-GEE_main');
 var aoi = ee.FeatureCollection('projects/your-project/assets/your-aoi');
-mapper.runAsync({aoi:aoi, year:2019, predictor_model:'model2', model:'RF',
+mapper.runAsync({aoi:aoi, year:2019, predictor_set:'pred2', model:'RF',
   numTreesRF:500, mask:'none'}, function(result,error) {
   if (error) { print(error); return; }
   Map.centerObject(aoi);
@@ -151,10 +151,18 @@ Land-cover masking filters samples and predictions. Select one or more category 
 - Dynamic World: 0 Water, 1 Trees, 2 Grass, 3 Flooded vegetation, 4 Crops, 5 Shrub and scrub, 6 Built, 7 Bare, 8 Snow and ice.
 - FNF4: 1 Dense forest, 2 Non-dense forest, 3 Non-forest, 4 Water.
 
-The app calls the shared main and only displays results. **No local/app switch is required.** In the Code Editor, open Run_And_Export.js, replace the AOI and settings, run it, and start the image/metrics exports in Tasks. The script also shows the map and diagnostic plots. Run_Local.js shows outputs without creating tasks. Exports run on Earth Engine and go to the user's Drive; they are not local computation.
+The app calls the shared main and only displays results. **No local/app switch is required.** In the Code Editor, open Run_And_Export.js, replace the AOI and settings, run it, and start the image/metrics exports in Tasks. The script also shows the map and diagnostic plots. Run_Local.js shows diagnostics in the console without creating export tasks; its map preview is optional (`showMap=true`). Exports run on Earth Engine and go to the user's Drive; they are not local computation.
 
 To update an existing published web app, save the modules first, then use **Apps → existing app → Edit → update source and save/publish**. Running the script previews it in the Code Editor; it does not update the published URL. Keep the existing App ID to retain its URL. Libraries and AOI assets must be accessible to the app and to intended Code Editor users.
 
 Sources: [Dynamic World catalogue](https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_DYNAMICWORLD_V1), [FNF4 catalogue](https://developers.google.com/earth-engine/datasets/catalog/JAXA_ALOS_PALSAR_YEARLY_FNF4), [GEDI catalogue](https://developers.google.com/earth-engine/datasets/catalog/LARSE_GEDI_GEDI02_A_002_MONTHLY), [Earth Engine app management](https://developers.google.com/earth-engine/guides/apps).
 
 Known UI limitation: the Run/Reset labels and colours are updated, but the current Code Editor renderer fixes the inner button text at 11 px despite the requested 22 px widget font. The requested visible font enlargement is not yet achieved.
+
+## Terminology and execution
+
+A **predictor set** is a collection of input variables: `pred1` or `pred2`. A **regression model** is RF, GBM or CART. Public examples use `predictor_set`; the older `predictor_model` values `model1`/`model2` remain compatibility aliases inside the library. They are not additional regression algorithms.
+
+The historical filename `Run_Local.js` means a Code Editor entry point, not offline computation. `CH-GEE_main` returns an `ee.Image` and diagnostics without opening an app. Evaluation requests compute diagnostics; the image remains a deferred Earth Engine object until an analysis, visualization or export requests pixels. Printing diagnostics does not materialize a complete raster file.
+
+The published app displays the map and diagnostics without export controls. The Code Editor examples show diagnostics in the console and can optionally display or export the map. Adding libraries does not require reorganizing the published app around the original filenames. An optional export-enabled UI should have a separate explicit entry point; do not infer export mode from the execution environment or enable it in the public app.

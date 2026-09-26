@@ -12,7 +12,9 @@ class PythonInterfaceTest(ApiTestCase):
         aoi = ee.FeatureCollection([ee.Feature(ee.Geometry.Rectangle([9.29,39.24,9.30,39.25]))])
         for predictor in ['model1','model2']:
             with patch.object(ee.data,'computeValue',return_value=100):
-                result = run(aoi, predictor_model=predictor, materialize=False)
+                result = run(aoi, predictor_set=predictor.replace('model','pred'), materialize=False)
+                legacy = run(aoi, predictor_model=predictor, materialize=False)
+                self.assertEqual(result.image.serialize(),legacy.image.serialize())
             graph = result.image.serialize()
             self.assertIn('Image.classify',graph)
             self.assertNotIn('interval_width',graph)
@@ -22,6 +24,10 @@ class PythonInterfaceTest(ApiTestCase):
                 self.assertIsNone(task.id)
         with self.assertRaises(ValueError):
             run(aoi,predictor_model='invalid')
+        with self.assertRaises(ValueError):
+            run(aoi,predictor_set='pred3')
+        with self.assertRaises(ValueError):
+            run(aoi,predictor_set='pred1',predictor_model='model2')
 
 if __name__ == '__main__':
     unittest.main()

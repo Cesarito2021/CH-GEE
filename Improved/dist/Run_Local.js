@@ -266,7 +266,16 @@ function date(value,name){
 exports.normalize=function(input){
  input=input||{};if(!input.aoi)throw new Error('An area of interest is required.');
  var o={aoi:input.aoi};
- o.predictor_model=choice(input.predictor_model,'model2',['model1','model2'],'predictor set');
+ // Public terminology: predictor_set identifies input data; model identifies RF/GBM/CART.
+ // Retain the old predictor_model identifiers internally for existing callers.
+ var recipe=input.predictor_model;
+ if(input.predictor_set!==undefined){
+  var set=choice(input.predictor_set,'pred2',['pred1','pred2'],'predictor set');
+  var mapped=set==='pred1'?'model1':'model2';
+  if(recipe!==undefined&&recipe!==mapped)throw new Error('Conflicting predictor set options');
+  recipe=mapped;
+ }
+ o.predictor_model=choice(recipe,'model2',['model1','model2'],'predictor set');
  var original=o.predictor_model==='model1';
  o.pipeline_version=original?'original':'improved';
  o.dataset_option='S2S1';
@@ -1345,14 +1354,22 @@ exports.mapLegend = function(colors,title,max) {
 };
 function localRequire(n){if(!factories[n])return hostRequire(n);if(!cache[n]){cache[n]={};factories[n](cache[n]);}return cache[n];}
 (function(exports){
+// Code Editor function example (Earth Engine cloud processing, no app).
+// The filename is retained for compatibility. Map display is optional.
 // Paste this file after installing the modules, or use dist/Run_Local.js.
 var mapper=localRequire('users/calvites1990/CH-GEE_Improved:CH-GEE_main');
 var plots=localRequire('users/calvites1990/CH-GEE_Improved:ForPlots');
 var aoi=ee.FeatureCollection('projects/ee-calvites1990/assets/aoi_sardinia_4326'); // Replace with your polygon asset.
-mapper.runAsync({aoi:aoi,year:2019,predictor_model:'model2',model:'RF',numTreesRF:500,mask:'none'},function(result,error){
+var showMap=false; // Set true only if a map preview is wanted.
+mapper.runAsync({aoi:aoi,year:2019,predictor_set:'pred2', // pred1 or pred2: input data
+model:'RF', // RF, GBM or CART: regression algorithm
+numTreesRF:500,mask:'none'},function(result,error){
 if(error){print('Unable to complete',error);return;}
-Map.centerObject(aoi);
-Map.addLayer(result.image,{min:0,max:30,palette:plots.palettes.Viridis},'Canopy height (m)');
+var canopyHeight=result.image; // ee.Image at 10 m; use in subsequent analyses or optional exports.
+if(showMap){
+ Map.centerObject(aoi);
+ Map.addLayer(canopyHeight,{min:0,max:30,palette:plots.palettes.Viridis},'Canopy height (m)');
+}
 print('Evaluation',result.metrics);
 print('Testing scatter plot',plots.scatter(result.validation));
 print('Variable importance',plots.importance(result.classifier));

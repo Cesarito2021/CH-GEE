@@ -43,15 +43,15 @@ Run from `python/`, or add that directory to your Python import path:
 ```python
 from chgee import run
 aoi = ee.FeatureCollection("projects/your-project/assets/your-aoi")
-result = run(aoi, year=2019, predictor_model="model2", model="RF",
+result = run(aoi, year=2019, predictor_set="pred2", model="RF",
              numTreesRF=500, quantile="rh95", mask="none")
 print(result.evaluate())
 ```
 
-Use `model1` or `model2` for predictor sets; use `RF`, `GBM` or `CART`
+Use `predictor_set="pred1"` or `predictor_set="pred2"` for input data; use `RF`, `GBM` or `CART`
 for the regression algorithm. Supported settings match `Config.js`. Pred 1 has
-no selection; Pred 2/3 always apply the mean-importance rule. GEDI end dates
-are exclusive. For Pred 2/3, `beams="strong"` and `acquisition="nighttime"`
+no selection; Pred 2 applies the mean-importance rule. GEDI end dates
+are exclusive. For either predictor set, `beams="strong"` and `acquisition="nighttime"`
 are optional. A GeoJSON FeatureCollection or an `ee.FeatureCollection` also works.
 
 By default samples are materialized once before fitting, matching the app.
@@ -75,7 +75,7 @@ tasks = result.export_to_drive(description="CH_GEE_Pred2_2019", start=False)
 ```
 
 Exports are a 10 m GeoTIFF and a CSV of metrics. They are independent of the
-100 m app preview. To save scatter/importance figures locally, install
+30 m Pred 2 app preview. To save scatter/importance figures locally, install
 `matplotlib` and use `plots.py`; it never launches an app or exports a map.
 
 ## Incoming updates

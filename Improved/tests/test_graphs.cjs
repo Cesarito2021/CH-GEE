@@ -5,6 +5,10 @@ ee.data.computeValue=()=>{throw new Error('Unexpected server request');};
 const cache={};function load(name){if(cache[name])return cache[name];const file=name.startsWith('users/adugnagirma/')?path.join(root,'vendor/gee_s1_ard',name.split(':')[1]+'.js'):path.join(root,name.split(':').pop()+'.js');const c={ee,require:load,exports:{},print(){}};vm.runInNewContext(fs.readFileSync(file,'utf8'),c,{filename:file});return cache[name]=c.exports;}
 const config=load('Config'),main=load('CH-GEE_main'),aoi=ee.FeatureCollection([ee.Feature(ee.Geometry.Rectangle([9.29,39.24,9.30,39.25]))]);
 assert.throws(()=>config.normalize({aoi,predictor_model:'model3'}),/predictor set/);
+assert.equal(config.normalize({aoi,predictor_set:'pred1'}).predictor_model,'model1');
+assert.equal(config.normalize({aoi,predictor_set:'pred2'}).predictor_model,'model2');
+assert.throws(()=>config.normalize({aoi,predictor_set:'pred3'}),/predictor set/);
+assert.throws(()=>config.normalize({aoi,predictor_set:'pred1',predictor_model:'model2'}),/Conflicting/);
 assert.throws(()=>config.normalize({aoi,mask:'DW',maskClasses:[]}),/category/);
 assert.throws(()=>config.normalize({aoi,mask:'FNF',maskClasses:[0]}),/category/);
 assert.throws(()=>config.normalize({aoi,start_date:'2020-02-30'}),/predictor start/);

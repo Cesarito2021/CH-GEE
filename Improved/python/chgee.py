@@ -45,11 +45,13 @@ class Result:
         return tasks
 
 
-def run(aoi, year=2019, predictor_model="model2", model="RF", node=None, materialize=True, **options):
+def run(aoi, year=2019, predictor_model=None, model="RF", node=None, materialize=True, predictor_set=None, **options):
     """Return the 10 m exportable prediction and test outputs as EE objects.
 
     aoi: polygon asset ID, GeoJSON FeatureCollection, or ee.FeatureCollection.
-    predictor_model: model1 (original), model2 (S1/S2 + GLO-30 + coordinates).
+    predictor_set: pred1 (original), pred2 (S1/S2 + GLO-30 + coordinates; default).
+    model: RF, GBM or CART regression algorithm.
+    predictor_model: compatibility alias accepting model1/model2; prefer predictor_set.
     options: same named settings as Config.js. Selection is fixed by predictor set.
     materialize: freeze predictor samples before fitting, as in the app (default).
         False builds a wholly deferred graph, suitable for larger batch workflows.
@@ -58,6 +60,15 @@ def run(aoi, year=2019, predictor_model="model2", model="RF", node=None, materia
     executable = node or shutil.which("node")
     if not executable:
         raise RuntimeError("Install Node.js, then run npm ci in CH-GEE_Improved.")
+    if predictor_set is not None:
+        if predictor_set not in ("pred1", "pred2"):
+            raise ValueError("predictor_set must be pred1 or pred2")
+        mapped = {"pred1": "model1", "pred2": "model2"}[predictor_set]
+        if predictor_model is not None and predictor_model != mapped:
+            raise ValueError("Conflicting predictor set options")
+        predictor_model = mapped
+    if predictor_model is None:
+        predictor_model = "model2"
     if predictor_model not in ("model1", "model2"):
         raise ValueError("predictor_model must be model1 or model2")
     fc = ee.FeatureCollection(aoi)

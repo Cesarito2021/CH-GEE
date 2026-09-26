@@ -266,7 +266,16 @@ function date(value,name){
 exports.normalize=function(input){
  input=input||{};if(!input.aoi)throw new Error('An area of interest is required.');
  var o={aoi:input.aoi};
- o.predictor_model=choice(input.predictor_model,'model2',['model1','model2'],'predictor set');
+ // Public terminology: predictor_set identifies input data; model identifies RF/GBM/CART.
+ // Retain the old predictor_model identifiers internally for existing callers.
+ var recipe=input.predictor_model;
+ if(input.predictor_set!==undefined){
+  var set=choice(input.predictor_set,'pred2',['pred1','pred2'],'predictor set');
+  var mapped=set==='pred1'?'model1':'model2';
+  if(recipe!==undefined&&recipe!==mapped)throw new Error('Conflicting predictor set options');
+  recipe=mapped;
+ }
+ o.predictor_model=choice(recipe,'model2',['model1','model2'],'predictor set');
  var original=o.predictor_model==='model1';
  o.pipeline_version=original?'original':'improved';
  o.dataset_option='S2S1';
@@ -1371,7 +1380,8 @@ var plots=localRequire('users/calvites1990/CH-GEE_Improved:ForPlots');
 var aoi=ee.FeatureCollection('projects/ee-calvites1990/assets/aoi_sardinia_4326'); // Replace with your own asset.
 // Both end dates are exclusive. GEDI may span several years.
 // Optional land cover: mask:'DW', maskClasses:[1,5], maskYear:2019.
-var options={aoi:aoi,predictor_model:'model2',model:'RF',numTreesRF:500,
+// predictor_set: pred1/pred2 input data. model: RF/GBM/CART regression algorithm.
+var options={aoi:aoi,predictor_set:'pred2',model:'RF',numTreesRF:500,
  start_date:'2019-04-01',end_date:'2019-09-30',
  startDateGEDI:'2019-01-01',endDateGEDI:'2020-12-31',
  quantile:'rh95',gedi_type:'singleGEDI',beams:'all',acquisition:'all',mask:'none'};

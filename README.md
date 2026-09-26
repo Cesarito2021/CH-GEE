@@ -22,7 +22,7 @@ var options = {
   aoi: aoi,
   start_date: '2019-04-01',
   end_date: '2019-09-30',
-  predictor_model: 'model2', // model1 or model2
+  predictor_set: 'pred2',   // pred1 or pred2: input data
   model: 'RF',              // RF, GBM or CART
   numTreesRF: 500,
   quantile: 'rh95',
@@ -60,7 +60,7 @@ result = run(
     aoi,
     start_date="2019-04-01",
     end_date="2019-09-30",
-    predictor_model="model2",  # model1 or model2
+    predictor_set="pred2",  # pred1 or pred2: input data
     model="RF",               # RF, GBM or CART
     numTreesRF=500,
     quantile="rh95",

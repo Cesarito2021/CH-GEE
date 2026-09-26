@@ -5,7 +5,8 @@ var plots=require('users/calvites1990/CH-GEE_Improved:ForPlots');
 var aoi=ee.FeatureCollection('projects/ee-calvites1990/assets/aoi_sardinia_4326'); // Replace with your own asset.
 // Both end dates are exclusive. GEDI may span several years.
 // Optional land cover: mask:'DW', maskClasses:[1,5], maskYear:2019.
-var options={aoi:aoi,predictor_model:'model2',model:'RF',numTreesRF:500,
+// predictor_set: pred1/pred2 input data. model: RF/GBM/CART regression algorithm.
+var options={aoi:aoi,predictor_set:'pred2',model:'RF',numTreesRF:500,
  start_date:'2019-04-01',end_date:'2019-09-30',
  startDateGEDI:'2019-01-01',endDateGEDI:'2020-12-31',
  quantile:'rh95',gedi_type:'singleGEDI',beams:'all',acquisition:'all',mask:'none'};
