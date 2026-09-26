@@ -1,4 +1,81 @@
 # Canopy Height Mapper - Google Earth Engine
+
+## CH-GEE Improved — new single-map version
+
+The separate [Improved release](Improved/README.md) provides two predictor sets:
+the original Sentinel-1/2 + GMTED workflow and Sentinel-1/2 + GLO-30 terrain +
+coordinates, with buffered sampling and training-only variable selection for Pred 2.
+The app displays maps and diagnostics; the Code Editor function provides Drive exports.
+
+Start with [account access, AOI setup and the new function](Improved/README.md).
+Open the [Improved Earth Engine scripts](https://code.earthengine.google.com/?accept_repo=users/calvites1990/CH-GEE_Improved)
+if shared with you, or paste [the standalone app](Improved/dist/CH-GEE.js) into a new Code Editor script.
+The existing published app linked below remains the original version.
+
+### Main code — Google Earth Engine
+
+```javascript
+var mapper = require('users/calvites1990/CH-GEE_Improved:CH-GEE_main');
+var aoi = ee.FeatureCollection('projects/your-project/assets/your-aoi');
+
+var options = {
+  aoi: aoi,
+  start_date: '2019-04-01',
+  end_date: '2019-09-30',
+  predictor_set: 'pred2',   // pred1 or pred2: input data
+  model: 'RF',              // RF, GBM or CART
+  numTreesRF: 500,
+  quantile: 'rh95',
+  mask: 'none',             // none, FNF or DW
+  startDateGEDI: '2019-01-01',
+  endDateGEDI: '2020-12-31'  // Exclusive end date
+};
+
+mapper.runAsync(options, function(result,error) {
+  if (error) { print(error); return; }
+  Map.centerObject(aoi);
+  Map.addLayer(result.image, {min:0,max:30,
+    palette:['440154','443983','31688e','21918c','35b779','90d743','fde725']},
+    'Canopy height (m)');
+  print('Evaluation', result.metrics);
+});
+```
+
+See [Run_And_Export.js](Improved/Run_And_Export.js) for optional 10 m Drive tasks.
+
+### Main code — Python
+
+Follow the [setup instructions](Improved/python/README.md), including the local
+Node.js dependency, then run this example from `Improved/python/`.
+
+```python
+import ee
+from chgee import run
+
+# ee.Authenticate()  # Run once if authentication is needed.
+ee.Initialize(project="your-earth-engine-project")
+aoi = ee.FeatureCollection("projects/your-project/assets/your-aoi")
+
+result = run(
+    aoi,
+    start_date="2019-04-01",
+    end_date="2019-09-30",
+    predictor_set="pred2",  # pred1 or pred2: input data
+    model="RF",               # RF, GBM or CART
+    numTreesRF=500,
+    quantile="rh95",
+    mask="none",              # none, FNF or DW
+    startDateGEDI="2019-01-01",
+    endDateGEDI="2020-12-31",   # Exclusive end date
+)
+
+canopy_height = result.image
+print(result.evaluate())
+
+# Optional 10 m Drive export; start only when required.
+# tasks = result.export_to_drive(description="CH_GEE_Pred2_2019", start=True)
+```
+
 ## User Interface
 ![Image](https://github.com/user-attachments/assets/ee1e953b-e45a-46e5-a793-dab78453429c)
 ## Background and Access
@@ -13,7 +90,7 @@ The GEDI mission can monitor nearest Earth's forests through widespread laser sh
 ## Vision
 The vision of the CH-GEE web app is to be the leading platform for accessing high-resolution Canopy Height maps of Earth's forests. We aim to empower individuals, organisations, and researchers worldwide with the tools and data they need to make informed decisions, protect forests, and address critical environmental challenges.
 
-## Tutorial 
+## Tutorial — original published version
 Note: if the area of interest is larger than 10,000 grid dimension and the GeoTIFF file exceeds 32 MB, please follow this code:
 
 ### Step 1: Setting the CH-GEE function
