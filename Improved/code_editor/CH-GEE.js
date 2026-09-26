@@ -169,11 +169,11 @@ function displayResult(result,report,title,area){
  appMap.layers().reset();currentReport={title:title,metrics:report.metrics,predictions:report.predictions,importance:report.importance};
  // The display is a separate graph; the returned product remains untouched.
  var coarse=result.options.predictor_model!=='model1';
- var preview=coarse?result.image.clip(result.prepared.geometry).reproject({crs:'EPSG:4326',scale:100}):result.image;
+ var preview=coarse?result.image.clip(result.prepared.geometry).reproject({crs:'EPSG:4326',scale:30}):result.image;
  adjustAutoRange();heightLayer=ui.Map.Layer(preview.select('predicted'),{min:0,max:displayMaximum,palette:plots.palettes[paletteChoice.getValue()]},'Canopy height',true);appMap.layers().add(heightLayer);
  updateDisplay();setMenu(false);drawChart();results.style().set('shown',chartToggle.getValue());
  var token=generation;ui.util.setTimeout(function(){if(token===generation)appMap.centerObject(result.prepared.geometry);},150);
- setStatus('Ready · '+Math.round(area/10000).toLocaleString()+' ha · '+report.metrics.test_n+' test points'+(coarse?'\nPreview: 100 m · product: 10 m':''));
+ setStatus('Ready · '+Math.round(area/10000).toLocaleString()+' ha · '+report.metrics.test_n+' test points'+(coarse?'\nPreview: 30 m · product: 10 m':''));
  print('CH-GEE Improved · evaluation',report.metrics);run.setDisabled(false);
 }
 function runMapper(){
@@ -226,4 +226,3 @@ var run=ui.Button({label:'Run CH-GEE',onClick:runMapper,style:{stretch:'horizont
 var reset=ui.Button({label:'Reset CH-GEE',style:{stretch:'horizontal',margin:'6px 0',color:'#C62828',fontWeight:'bold',fontSize:'22px'},onClick:function(){generation++;sampleCache=null;completed=null;currentReport=null;heightLayer=null;appMap.layers().reset();results.clear();results.style().set('shown',false);setMenu(true);run.setDisabled(false);setStatus('');}});footer.add(reset);
 status.style().set({backgroundColor:'#36384b',fontSize:'13px',margin:'4px 0'});footer.add(status);
 sidebar.add(footer);sidebar.style().set('shown',true);mountMap();appMap.setOptions('SATELLITE');appMap.centerObject(ee.FeatureCollection(asset.getValue()));
-
