@@ -4,7 +4,7 @@ var factories={},cache={};
 factories["users/calvites1990/CH-GEE_Improved:CH-GEE_main"]=function(exports){
 // CH-GEE improved library. Computation is independent of Map/ui.
 var config = localRequire('users/calvites1990/CH-GEE_Improved:Config');
-var ae = localRequire('users/calvites1990/CH-GEE_Improved:AlphaEarth');
+var terrainLib = localRequire('users/calvites1990/CH-GEE_Improved:Terrain');
 var masks = localRequire('users/calvites1990/CH-GEE_Improved:ForForestMasking');
 var gediLib = localRequire('users/calvites1990/CH-GEE_Improved:L2A_GEDI_source');
 var s2Lib = localRequire('users/calvites1990/CH-GEE_Improved:Sentinel2_source');
@@ -16,13 +16,8 @@ function geometry(aoi) {
   return ee.FeatureCollection(aoi).geometry();
 }
 function predictors(o, region) {
-  var terrain = ae.generateDEMStack30m(region, o.dem_source, 30);
+  var terrain = terrainLib.generateDEMStack30m(region, o.dem_source, 30);
   var stack, diagnostics = {};
-  if (o.dataset_option === 'GEE') {
-    var embedding = ae.generateGoogleEmbeddingStack(region, o.year, o.year);
-    stack = embedding.addBands(terrain);
-    diagnostics.embedding_bands = embedding.bandNames().size();
-  } else {
     // Build the full buffered region once. Never fill missing predictors with zero.
     var s2 = s2Lib.calculateCompositeClip(o.year, o.start_date, o.end_date,
       o.cloudsTh, o.cloudProbability, ee.Image(1), region, o.s2_composite);
@@ -33,7 +28,6 @@ function predictors(o, region) {
     stack = s2.select(s2Lib.bands).addBands(terrain).addBands(s1.composite);
     diagnostics.s2_scenes = s2.get('scene_count');
     diagnostics.s1_scenes = s1.collection.size();
-  }
   return {image:stack.addBands(ee.Image.pixelLonLat()).toFloat().clip(region), diagnostics:diagnostics};
 }
 exports.referencePoints = function(options) {
@@ -46,7 +40,7 @@ exports.referencePoints = function(options) {
   var settings=sampling.settings(base.area(1).divide(10000).round());
   var sampleRegion=region, sampleScale=o.sampleScale;
   if (o.sampling !== 'fixed') {
-    var sites=sampling.generateSamplingSites(region,settings.cellSize,1,masks.ForestMasking(region,o.mask,o.year));
+    var sites=sampling.generateSamplingSites(region,settings.cellSize,1,masks.ForestMasking(region,o.mask,o.maskYear,o.maskClasses));
     sampleRegion=ee.Geometry(ee.Algorithms.If(base.area(1).divide(10000).round().lte(4000),region,
       sites.buffer.geometry(10).intersection(region,10)));
     sampleScale=o.sampling === 'legacy' ? settings.scale : o.sampleScale;
@@ -70,7 +64,7 @@ exports.prepare = function(options, points) {
   if(o.predictor_model === 'model1') throw new Error('Use run() for the original predictor set.');
   var region = o.buffer ? geom.buffer(o.buffer, 1) : geom;
   var stack = predictors(o, region);
-  var mask = masks.ForestMasking(region, o.mask, o.year);
+  var mask = masks.ForestMasking(region, o.mask, o.maskYear, o.maskClasses);
   var image = stack.image.updateMask(mask);
   points = points || exports.referencePoints(o);
   if (o.maxReferenceHeight !== null) points = ee.FeatureCollection(points).filter(ee.Filter.lte('rh',o.maxReferenceHeight));
@@ -272,23 +266,31 @@ function date(value,name){
 exports.normalize=function(input){
  input=input||{};if(!input.aoi)throw new Error('An area of interest is required.');
  var o={aoi:input.aoi};
- o.predictor_model=choice(input.predictor_model,'model3',['model1','model2','model3'],'predictor set');
+ o.predictor_model=choice(input.predictor_model,'model2',['model1','model2'],'predictor set');
  var original=o.predictor_model==='model1';
  o.pipeline_version=original?'original':'improved';
- o.dataset_option=o.predictor_model==='model3'?'GEE':'S2S1';
+ o.dataset_option='S2S1';
  o.dem_source=original?'GMTED2010':'COPERNICUS';
  o.s1_composite=original?'mean':'median';o.s2_composite='median';
  o.selection=original?'none':'mean';o.top_n_vars=0;
  o.maxReferenceHeight=original?null:50;
- o.beams=original?'all':choice(input.beams,'all',['all','strong','weak'],'GEDI beams');
- o.acquisition=original?'all':choice(input.acquisition,'all',['all','daytime','nighttime'],'GEDI acquisition');
+ o.beams=choice(input.beams,'all',['all','strong','weak'],'GEDI beams');
+ o.acquisition=choice(input.acquisition,'all',['all','daytime','nighttime'],'GEDI time acquisition');
  o.year=number(input.year,2019,'year',2017,2100,true);
  o.model=choice(input.model,'RF',['RF','GBM','CART'],'algorithm');
  o.mask=choice(input.mask,'none',['none','FNF','DW'],'forest mask');
+ o.maskClasses=o.mask==='none'?[]:(input.maskClasses===undefined?(o.mask==='DW'?[1]:[1,2]):input.maskClasses);
+ if(!Array.isArray(o.maskClasses)|| (o.mask!=='none'&&!o.maskClasses.length))throw new Error('Select at least one land-cover category.');
+ o.maskClasses=o.maskClasses.map(function(v){return number(v,null,'land-cover category',o.mask==='DW'?0:1,o.mask==='DW'?8:4,true);});
  o.gedi_type=choice(input.gedi_type,'singleGEDI',['singleGEDI','meanGEDI'],'GEDI metric');
- o.quantile=input.quantile||'rh95';if(!/^rh(?:[1-9]|[1-9][0-9]|100)$/.test(o.quantile))throw new Error('Invalid RH metric');
+ o.quantile=input.quantile||'rh95';if(!/^rh(?:[0-9]|[1-9][0-9]|100)$/.test(o.quantile))throw new Error('Invalid RH metric');
  o.start_date=input.start_date||'04-01';o.end_date=input.end_date||'09-30';
- if(date(o.year+'-'+o.start_date,'season start')>=date(o.year+'-'+o.end_date,'season end'))throw new Error('Season end must follow start.');
+ o.start_date=date(o.start_date.length===5?o.year+'-'+o.start_date:o.start_date,'predictor start');
+ o.end_date=date(o.end_date.length===5?o.year+'-'+o.end_date:o.end_date,'predictor end');
+ if(o.start_date>=o.end_date)throw new Error('Predictor end must follow start.');
+ o.year=Number(o.start_date.slice(0,4));
+ o.maskYear=number(input.maskYear,o.year,'land-cover year',2015,2100,true);
+ if(o.mask==='FNF'&&(o.maskYear<2017||o.maskYear>2020))throw new Error('FNF4 is available for 2017–2020. Set a land-cover year in that range or use Dynamic World.');
  o.startDateGEDI=date(input.startDateGEDI||o.year+'-01-01','GEDI start');
  o.endDateGEDI=date(input.endDateGEDI||(o.year+1)+'-12-31','GEDI end');
  if(o.startDateGEDI>=o.endDateGEDI)throw new Error('GEDI end must follow start.');
@@ -306,8 +308,8 @@ exports.normalize=function(input){
 };
 
 };
-factories["users/calvites1990/CH-GEE_Improved:AlphaEarth"]=function(exports){
-// Annual AlphaEarth embeddings and terrain predictors.
+factories["users/calvites1990/CH-GEE_Improved:Terrain"]=function(exports){
+// Terrain predictors. Copernicus GLO-30 and GMTED2010.
 function geom(value) {
   return typeof value.geometry === 'function' ? value.geometry() : value;
 }
@@ -327,40 +329,24 @@ exports.generateDEMStack30m = function(boundary, source, scale) {
   return grid.addBands(ee.Terrain.slope(grid).rename('slope'))
     .addBands(ee.Terrain.aspect(grid).rename('aspect')).clip(region);
 };
-exports.generateGoogleEmbeddingStack = function(boundary, startYear, endYear) {
-  if (Number(startYear) !== Number(endYear)) throw new Error('Use one annual embedding at a time');
-  var region = geom(boundary);
-  return ee.ImageCollection('GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL').filterBounds(region)
-    .filterDate(ee.Date.fromYMD(Number(startYear),1,1), ee.Date.fromYMD(Number(startYear)+1,1,1))
-    .mosaic().clip(region);
-};
-exports.addLatLonBands = function(image, boundary) {
-  return image.addBands(ee.Image.pixelLonLat().clip(geom(boundary)));
-};
-exports.ee_build_AlphaEarth_embedding_terrain_stack = function(boundary, start, end,
-  maskOutside, scale, multiplyTerrain, addLonLat, source) {
-  var terrain = exports.generateDEMStack30m(boundary, source, scale);
-  if (multiplyTerrain) terrain = terrain.select('elevation').addBands(terrain.select(['slope','aspect']).multiply(10));
-  var image = exports.generateGoogleEmbeddingStack(boundary,start,end).addBands(terrain);
-  if (addLonLat !== false) image = exports.addLatLonBands(image,boundary);
-  return maskOutside === false ? image : image.clip(geom(boundary));
-};
-
 
 };
 factories["users/calvites1990/CH-GEE_Improved:ForForestMasking"]=function(exports){
-exports.ForestMasking = function(geometry, kind, year) {
+// Classes follow the official Earth Engine dataset catalogues.
+exports.ForestMasking = function(geometry, kind, year, classes) {
+  classes = classes || (kind === 'DW' ? [1] : [1,2]);
+  var retained = classes.map(function() { return 1; });
   if (kind === 'FNF') {
     // FNF4: 1=dense forest, 2=non-dense forest, 3=non-forest, 4=water.
     var fnf = ee.ImageCollection('JAXA/ALOS/PALSAR/YEARLY/FNF4')
       .filterBounds(geometry).filterDate(year + '-01-01', (year + 1) + '-01-01')
       .select('fnf').mosaic();
-    return fnf.eq(1).or(fnf.eq(2)).selfMask().clip(geometry);
+    return fnf.remap(classes,retained,0).selfMask().clip(geometry);
   }
   if (kind === 'DW') {
     return ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1').filterBounds(geometry)
       .filterDate(year + '-01-01', (year + 1) + '-01-01')
-      .select('label').mode().eq(1).selfMask().clip(geometry);
+      .select('label').mode().remap(classes,retained,0).selfMask().clip(geometry);
   }
   if (kind !== 'none') throw new Error('Forest mask must be none, FNF or DW');
   return ee.Image(1).clip(geometry);
@@ -404,7 +390,7 @@ factories["users/calvites1990/CH-GEE_Improved:Sentinel2_source"]=function(export
 var bands = ['B1','B2','B3','B4','B5','B6','B7','B8','B8A','B9','B11','B12'];
 exports.bands = bands;
 exports.collection = function(year, start, end, clouds, probability, geometry) {
-  var dates = [year + '-' + start, year + '-' + end];
+  var dates = [start.length===10?start:year + '-' + start, end.length===10?end:year + '-' + end];
   var sr = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
     .filterBounds(geometry).filterDate(dates[0], dates[1])
     .filter(ee.Filter.lte('CLOUDY_PIXEL_PERCENTAGE', clouds));
@@ -439,7 +425,7 @@ exports.to_sentinel_filtered = function(opt) {
   var method = opt.composite || 'median';
   if (['mean','median'].indexOf(method) < 0) throw new Error('Invalid S1 composite');
   var params = {
-    START_DATE:opt.year + '-' + opt.start_date, STOP_DATE:opt.year + '-' + opt.end_date,
+    START_DATE:opt.start_date.length===10?opt.start_date:opt.year + '-' + opt.start_date, STOP_DATE:opt.end_date.length===10?opt.end_date:opt.year + '-' + opt.end_date,
     POLARIZATION:'VVVH', ORBIT:opt.orbit || 'BOTH', GEOMETRY:opt.aoi,
     APPLY_ADDITIONAL_BORDER_NOISE_CORRECTION:true, APPLY_SPECKLE_FILTERING:true,
     SPECKLE_FILTER_FRAMEWORK:opt.framework || 'MULTI', SPECKLE_FILTER:'GAMMA MAP',
@@ -683,8 +669,8 @@ factories["users/calvites1990/CH-GEE:Sentinel2_source"]=function(exports){
 //***********************************************************************************************
  
  var calculateCompositeClip = function(year, startDate, endDate, cloudsTh, MaxCloudsProbability, mask_raster,geometry){
-  var startDateWithYear = year+"-"+startDate; // example 2017 // "08-10" // -> "2017-08-10"
-  var endDateWithYear = year+"-"+endDate;
+  var startDateWithYear = startDate.length===10?startDate:year+"-"+startDate; // example 2017 // "08-10" // -> "2017-08-10"
+  var endDateWithYear = endDate.length===10?endDate:year+"-"+endDate;
   // load and filter the S2 dataset
   var S2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', cloudsTh))
@@ -1019,7 +1005,7 @@ factories["users/calvites1990/CH-GEE:CH-GEE_main"]=function(exports){
 //***************************************************************************************************************
 
 var CanopyHeightMapper = function(aoi, year, start_date, end_date,startDateGEDI,endDateGEDI,cloudsTh, quantile, model, mask, gedi_type,
-numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samLingRateGBM,maxNodesGBM,lossGBM,maxNodesCART,minLeafPopCART,knownAreaHa){
+numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samLingRateGBM,maxNodesGBM,lossGBM,maxNodesCART,minLeafPopCART,knownAreaHa,userOptions){
   
   //***************************************************************************************************************
   //  Input Data
@@ -1065,7 +1051,7 @@ numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samL
   //***************************************************************************************************************
 
   var library10 = localRequire("users/calvites1990/CH-GEE:ForForestMasking");
-  var FNF = library10.ForestMasking(aoi2,mask);
+  var FNF = localRequire('users/calvites1990/CH-GEE_Improved:ForForestMasking').ForestMasking(aoi2,mask,userOptions.maskYear,userOptions.maskClasses);
  
   //***************************************************************************************************************
   //  Selecting Dependent variables
@@ -1076,7 +1062,7 @@ numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samL
   var dataset = ee.ImageCollection("LARSE/GEDI/GEDI02_A_002_MONTHLY")
   var library2 = localRequire("users/calvites1990/CH-GEE:L2A_GEDI_source"); 
   //var gedi = library2.ToGEDI(dataset,gedi_type,startDateGEDI,endDateGEDI,quantile,FNF) 
-  var gedi = library2.ToGEDI(dataset, gedi_type, startDateGEDI, endDateGEDI,quantile, FNF, 'all', 'all');
+  var gedi = library2.ToGEDI(dataset, gedi_type, startDateGEDI, endDateGEDI,quantile, FNF, userOptions.beams, userOptions.acquisition);
   //***************************************************************************************************************
   //  Selecting Independent variables
   //***************************************************************************************************************
@@ -1260,7 +1246,7 @@ exports.CanopyHeightMapper = CanopyHeightMapper;
 //***************************************************** End *****************************************************
 };
 function localRequire(name){if(!factories[name])return hostRequire(name);if(!cache[name]){cache[name]={};factories[name](cache[name]);}return cache[name];}
-out.run=function(o){return localRequire('users/calvites1990/CH-GEE:CH-GEE_main').CanopyHeightMapper(o.aoi,o.year,o.start_date,o.end_date,o.startDateGEDI,o.endDateGEDI,o.cloudsTh,o.quantile,o.model,o.mask,o.gedi_type,o.numTreesRF,o.varSplitRF,o.minLeafPopuRF,o.bagFracRF,o.maxNodesRF,o.numTreesGBM,o.shrGBM,o.samLingRateGBM,o.maxNodesGBM,o.lossGBM,o.maxNodesCART,o.minLeafPopCART,o.areaHa);};
+out.run=function(o){return localRequire('users/calvites1990/CH-GEE:CH-GEE_main').CanopyHeightMapper(o.aoi,o.year,o.start_date,o.end_date,o.startDateGEDI,o.endDateGEDI,o.cloudsTh,o.quantile,o.model,o.mask,o.gedi_type,o.numTreesRF,o.varSplitRF,o.minLeafPopuRF,o.bagFracRF,o.maxNodesRF,o.numTreesGBM,o.shrGBM,o.samLingRateGBM,o.maxNodesGBM,o.lossGBM,o.maxNodesCART,o.minLeafPopCART,o.areaHa,o);};
 })(require,exports);
 
 };
@@ -1366,9 +1352,8 @@ var plots = localRequire('users/calvites1990/CH-GEE_Improved:ForPlots');
 var accent = '#43A5BE';
 var background = '#424457';
 var recipes = {
- 'Pred 1 · S1 + S2 + GMTED': {id:'model1',note:'Original CH-GEE: Sentinel-1 mean, Sentinel-2 median and GMTED2010 topography (~232 m). 17 predictors; no variable selection.'},
- 'Pred 2 · S1 + S2 + COP + XY': {id:'model2',note:'Sentinel-1/2 medians + Copernicus DEM topography (30 m) + geographic coordinates. 19 candidates; mean-importance selection.'},
- 'Pred 3 · AlphaEarth + COP + XY': {id:'model3',note:'Annual AlphaEarth embeddings + Copernicus DEM topography (30 m) + geographic coordinates. 69 candidates; mean-importance selection.'}
+ 'Pred 1 · S1 + S2 + GMTED': {id:'model1'},
+ 'Pred 2 · S1 + S2 + GLO-30 + XY': {id:'model2'}
 };
 function themedLabel(value,style,url) {
   var theme = {backgroundColor:background,color:'#ffffff',fontFamily:'sans-serif'};
@@ -1381,7 +1366,7 @@ var sidebar = panel;
 var sections = [];
 var footer = ui.Panel({style:{padding:'6px',margin:'6px 0',backgroundColor:'#36384b'}});
 var results = ui.Panel({style:{position:'bottom-left',width:'370px',maxHeight:'390px',backgroundColor:'#fffffff0',padding:'10px',shown:false}});
-var status = themedLabel('Choose an area, then run the mapper.',{color:'#e2e4eb',whiteSpace:'pre-wrap'});
+var status = themedLabel('',{color:'#e2e4eb',whiteSpace:'pre-wrap'});
 function heading(title,opened) {
  var body = ui.Panel({style:{shown:!!opened,backgroundColor:background,margin:'0',padding:'0 4px'}});
  var toggle = ui.Button({label:opened ? '−' : '+',
@@ -1405,40 +1390,7 @@ function text(value) { return ui.Textbox({value:String(value),style:{stretch:'ho
 function select(items,value) { return ui.Select({items:items,value:value,style:{stretch:'horizontal',margin:'0',fontSize:'14px'}}); }
 panel.add(themedLabel('Canopy Height Mapper',{fontSize:'23px',fontWeight:'normal',color:'#7ED63C'}));
 panel.add(themedLabel('CH-GEE Improved · Google Earth Engine',{fontSize:'13px',color:accent,margin:'0 0 12px'},'https://github.com/Cesarito2021/CH-GEE'));
-panel.add(themedLabel('Input / output data',{fontSize:'18px',color:'#FFFF33',margin:'8px 0'}));
-heading('Data settings');
-var forest = field('Forest mask',select(['none','DW','FNF'],'none'));
-var dataset = field('Predictor set',select(Object.keys(recipes),'Pred 3 · AlphaEarth + COP + XY'));
-var recipeNote = themedLabel('',{fontSize:'14px',whiteSpace:'pre-wrap',margin:'8px 0'}); panel.add(recipeNote);
-var rh = field('GEDI target · relative height',select(['rh75','rh90','rh95','rh98','rh100','Mean RH75/90/95/100'],'rh95'));
-var beams = field('GEDI beams',select(['All beams','Strong / full power','Weak / coverage'],'All beams'));
-var acquisition = field('GEDI acquisition',select(['Day + night','Nighttime','Daytime'],'Day + night'));
-panel.add(themedLabel('Quality filtering: quality flag = 1; degrade flag = 0. Pred 2 and 3: reference RH ≤ 50 m.',{fontSize:'13px',whiteSpace:'pre-wrap'}));
-// Matching date boxes; GEDI dates are independent and may span several years.
-function timeRow() {
- var row=ui.Panel({layout:ui.Panel.Layout.flow('horizontal'),style:{backgroundColor:background,margin:'0',padding:'0',stretch:'horizontal'}});
- panel.add(row);return row;
-}
-function timeField(row,label,value) {
- var group=ui.Panel({style:{backgroundColor:background,width:'170px',margin:'0 4px 0 0',padding:'0'}});
- group.add(themedLabel(label,{fontSize:'14px',color:'#80c3d4',margin:'8px 0 4px'}));
- var input=text(value);input.style().set({height:'32px',padding:'0'});
- group.add(input);row.add(group);input.fieldGroup=group;return input;
-}
-panel.add(themedLabel('GEDI reference period',{fontSize:'14px',color:'#FFFF33',margin:'12px 0 0'}));
-var gediDates=timeRow();
-var gs = timeField(gediDates,'Start · YYYY-MM-DD','2019-01-01');
-var ge = timeField(gediDates,'End · YYYY-MM-DD','2020-12-31');
-panel.add(themedLabel('May span multiple years. End date is exclusive.',{fontSize:'12px',color:'#e2e4eb',margin:'4px 0 8px',whiteSpace:'pre-wrap'}));
-panel.add(themedLabel('Predictor period',{fontSize:'14px',color:'#FFFF33',margin:'12px 0 0'}));
-var year = timeField(timeRow(),'Map year',2019);
-var seasonDates=timeRow();
-var start = timeField(seasonDates,'Start · MM-DD','04-01');
-var end = timeField(seasonDates,'End · MM-DD','09-30');
-var seasonNote=themedLabel('Sentinel-2 season; end date is exclusive.',{fontSize:'12px',color:'#e2e4eb',margin:'4px 0 8px',whiteSpace:'pre-wrap'});panel.add(seasonNote);
-var clouds = field('Maximum scene cloud cover (%)',ui.Slider({min:0,max:100,value:30,step:1,
- style:{stretch:'horizontal',margin:'0',color:'#ffffff',backgroundColor:background}}));
-heading('Spatial settings',true);
+panel.add(themedLabel('Input/Output options',{fontSize:'18px',color:'#FFFF33',margin:'8px 0'}));
 var mode = field('Area of interest',select(['Earth Engine asset','Draw polygon'],'Earth Engine asset'));
 var asset = field('Polygon asset ID',text('projects/ee-calvites1990/assets/aoi_sardinia_4326'));
 var drawing = appMap.drawingTools(); drawing.setShown(false);
@@ -1452,6 +1404,55 @@ mode.onChange(function(value) {
 });
 panel.add(themedLabel('Preview limit: 30,000 ha. Original CH-GEE sampling by area.',
   {fontSize:'13px',color:'#e2e4eb',whiteSpace:'pre-wrap'}));
+
+heading('Data settings');
+function timeRow() {
+ var row=ui.Panel({layout:ui.Panel.Layout.flow('horizontal'),style:{backgroundColor:background,margin:'0',padding:'0',stretch:'horizontal'}});
+ panel.add(row);return row;
+}
+function timeField(row,label,value) {
+ var group=ui.Panel({style:{backgroundColor:background,width:'170px',margin:'0 4px 0 0',padding:'0'}});
+ group.add(themedLabel(label,{fontSize:'14px',color:'#80c3d4',margin:'8px 0 4px'}));
+ var input=text(value);input.style().set({height:'32px',padding:'0'});
+ group.add(input);row.add(group);input.fieldGroup=group;return input;
+}
+
+function subheading(label) { panel.add(themedLabel(label,{fontSize:'15px',color:'#FFFF33',margin:'12px 0 4px'})); }
+subheading('GEDI temporal setting');
+var gediDates=timeRow();
+var gs=timeField(gediDates,'Start · YYYY-MM-DD','2019-01-01');
+var ge=timeField(gediDates,'End · YYYY-MM-DD','2020-12-31');
+var rh=field('GEDI target · relative height (RH)',ui.Slider({min:0,max:100,value:95,step:1,style:{stretch:'horizontal',margin:'0',color:'#ffffff',backgroundColor:background}}));
+var average=ui.Checkbox({label:'AVG · RH75, RH90, RH95, RH100',value:false,style:{backgroundColor:background,color:'#80c3d4',fontSize:'14px'},onChange:function(v){rh.setDisabled(v);}});panel.add(average);
+var dataPanel=panel;
+var gediSettings=ui.Panel({style:{shown:false,backgroundColor:background,padding:'0',margin:'0'}});
+var gediToggle=ui.Button({label:'+ GEDI beam and time settings',style:{stretch:'horizontal',margin:'8px 0',fontSize:'14px'},onClick:function(){var shown=!gediSettings.style().get('shown');gediSettings.style().set('shown',shown);gediToggle.setLabel((shown?'−':'+')+' GEDI beam and time settings');}});
+panel.add(gediToggle);panel.add(gediSettings);panel=gediSettings;
+var beams=field('GEDI beams',select(['All beams','Strong / full power','Weak / coverage'],'All beams'));
+var acquisition=field('GEDI time acquisition',select(['Day + night','Nighttime','Daytime'],'Day + night'));
+panel=dataPanel;
+subheading('Predictor temporal setting');
+var predictorDates=timeRow();
+var start=timeField(predictorDates,'Start · YYYY-MM-DD','2019-04-01');
+var end=timeField(predictorDates,'End · YYYY-MM-DD','2019-09-30');
+var dataset=field('Predictor set',select(Object.keys(recipes),'Pred 2 · S1 + S2 + GLO-30 + XY'));
+var clouds=field('Maximum scene cloud cover (%)',ui.Slider({min:0,max:100,value:30,step:1,style:{stretch:'horizontal',margin:'0',color:'#ffffff',backgroundColor:background}}));
+subheading('Land Cover mask');
+var maskNames={'None':'none','Dynamic World':'DW','FNF':'FNF'};
+var forest=field('Dataset',select(Object.keys(maskNames),'None'));
+var maskYear=field('Land-cover year',text(2019));
+var categoryPanel=ui.Panel({style:{backgroundColor:background,margin:'0',padding:'0'}});panel.add(categoryPanel);
+var categoryWidgets=[];
+var categoryDefinitions={DW:['Water','Trees','Grass','Flooded vegetation','Crops','Shrub and scrub','Built','Bare','Snow and ice'],FNF:['Dense forest','Non-dense forest','Non-forest','Water']};
+function updateMask(){
+ categoryPanel.clear();categoryWidgets=[];var kind=maskNames[forest.getValue()];
+ maskYear.fieldGroup.style().set('shown',kind!=='none');categoryPanel.style().set('shown',kind!=='none');
+ (categoryDefinitions[kind]||[]).forEach(function(label,i){var id=kind==='DW'?i:i+1;
+  var box=ui.Checkbox({label:label,value:kind==='DW'?id===1:id<=2,style:{backgroundColor:background,color:'#80c3d4',fontSize:'14px',margin:'4px 0'}});
+  categoryPanel.add(box);categoryWidgets.push({id:id,widget:box});
+ });
+}
+forest.onChange(updateMask);updateMask();
 heading('Model parameter settings');
 var model = field('Algorithm',select(['RF','GBM','CART'],'RF'));
 var trees = field('Number of trees (RF / GBM)',text(500));
@@ -1472,23 +1473,12 @@ var hyper = {};
 });
 var loss = select(['LeastAbsoluteDeviation','LeastSquares','Huber'],'LeastAbsoluteDeviation');
 advanced.add(themedLabel('GBM loss')); advanced.add(loss);
-var selectionNote=themedLabel('',{fontSize:'13px',whiteSpace:'pre-wrap'});panel.add(selectionNote);
-function updateRecipe(){
- var entry=recipes[dataset.getValue()],sentinel=entry.id!=='model3',original=entry.id==='model1';recipeNote.setValue(entry.note);
- [start,end,clouds].forEach(function(w){w.fieldGroup.style().set('shown',sentinel);});
- seasonDates.style().set('shown',sentinel);seasonNote.style().set('shown',sentinel);
- [beams,acquisition].forEach(function(w){w.fieldGroup.style().set('shown',!original);});
- selectionNote.setValue(original?'Original predictor set: all 17 variables; original 70/30 split.':'Variable selection: retain at least mean importance. Training/testing: 70/30.');
-}
-dataset.onChange(updateRecipe);updateRecipe();
 heading('Map display');
 var paletteChoice=field('Colour palette',select(['Viridis','Forest','CH-GEE classic'],'Viridis'));
-var autoRange=ui.Checkbox({label:'Auto range from test predictions',value:true,style:{backgroundColor:background,color:'#ffffff'}});panel.add(autoRange);
-var maximum=field('Display maximum height (m)',ui.Slider({min:5,max:100,value:30,step:1,style:{stretch:'horizontal',backgroundColor:background,color:'#ffffff'}}));
-panel.add(themedLabel('Colours change the display only. Predicted heights remain unchanged.',{fontSize:'13px',whiteSpace:'pre-wrap'}));
+var displayMaximum=30;
 var heightLayer=null,currentReport=null,generation=0,sampleCache=null,completed=null;
 var legend=ui.Panel(),chartChoice=select(['Scatter plot','Variable importance','Metrics'],'Scatter plot');
-var progress=ui.Label('Choose an area, then run.',{fontSize:'13px',whiteSpace:'pre-wrap',backgroundColor:'#ffffff00'});
+var progress=ui.Label('',{fontSize:'13px',whiteSpace:'pre-wrap',backgroundColor:'#ffffff00'});
 function setStatus(value){status.setValue(value);progress.setValue(value);}
 function mountMap(){appMap.style().set({stretch:'both',width:sidebar.style().get('shown')?'calc(100% - 410px)':'100%'});ui.root.widgets().reset([appMap,sidebar]);}
 function setMenu(shown){var changed=sidebar.style().get('shown')!==shown;sidebar.style().set('shown',shown);drawing.setShown(shown&&mode.getValue()==='Draw polygon');if(changed)mountMap();}
@@ -1505,18 +1495,16 @@ function drawChart(){
  else results.add(chartLabel('Training: '+m.training_n+' · Testing: '+m.test_n+'\nMAE: '+format(m.mae_m,2)+' m · Bias: '+format(m.bias_m,2)+' m\n'+(m.selected_predictors||[]).join(', ')));
 }
 function adjustAutoRange(){
- if(!autoRange.getValue()||!currentReport)return;
+ if(!currentReport)return;
  var values=currentReport.predictions.map(function(r){return r.classification;}).filter(function(v){return typeof v==='number'&&isFinite(v);});
- if(values.length)maximum.setValue(Math.min(100,Math.max(5,Math.ceil(Math.max.apply(null,values)/5)*5)),false);
+ if(values.length)displayMaximum=Math.max(5,Math.ceil(Math.max.apply(null,values)/5)*5);
 }
 function updateDisplay(){
- var colors=plots.palettes[paletteChoice.getValue()],upper=maximum.getValue();
+ var colors=plots.palettes[paletteChoice.getValue()],upper=displayMaximum;
  if(heightLayer)heightLayer.setVisParams({min:0,max:upper,palette:colors});
  legend.clear();legend.add(plots.mapLegend(colors,'Canopy height',upper));
 }
 paletteChoice.onChange(updateDisplay);
-maximum.onChange(function(){autoRange.setValue(false,false);updateDisplay();});
-autoRange.onChange(function(){adjustAutoRange();updateDisplay();});
 var chartToggle=ui.Checkbox({label:'Show results',value:true,onChange:function(value){results.style().set('shown',value&&!!currentReport);}});
 chartChoice.onChange(function(){drawChart();if(currentReport){chartToggle.setValue(true,false);results.style().set('shown',true);}});
 var controls=ui.Panel({style:{position:'top-left',width:'230px',padding:'8px',backgroundColor:'#fffffff0'}});
@@ -1529,7 +1517,7 @@ function displayResult(result,report,title,area){
  // The display is a separate graph; the returned product remains untouched.
  var coarse=result.options.predictor_model!=='model1';
  var preview=coarse?result.image.clip(result.prepared.geometry).reproject({crs:'EPSG:4326',scale:100}):result.image;
- adjustAutoRange();heightLayer=ui.Map.Layer(preview.select('predicted'),{min:0,max:maximum.getValue(),palette:plots.palettes[paletteChoice.getValue()]},'Canopy height',true);appMap.layers().add(heightLayer);
+ adjustAutoRange();heightLayer=ui.Map.Layer(preview.select('predicted'),{min:0,max:displayMaximum,palette:plots.palettes[paletteChoice.getValue()]},'Canopy height',true);appMap.layers().add(heightLayer);
  updateDisplay();setMenu(false);drawChart();results.style().set('shown',chartToggle.getValue());
  var token=generation;ui.util.setTimeout(function(){if(token===generation)appMap.centerObject(result.prepared.geometry);},150);
  setStatus('Ready · '+Math.round(area/10000).toLocaleString()+' ha · '+report.metrics.test_n+' test points'+(coarse?'\nPreview: 100 m · product: 10 m':''));
@@ -1542,9 +1530,9 @@ function runMapper(){
    if(!asset.getValue().trim())throw new Error('Enter a polygon asset ID.');aoi=ee.FeatureCollection(asset.getValue().trim());
   }else{if(!drawing.layers().length())throw new Error('Draw a polygon first.');aoi=ee.FeatureCollection([ee.Feature(drawing.layers().get(0).getEeObject())]);}
   var title=dataset.getValue(),metric=rh.getValue();
-  var input={aoi:aoi,year:Number(year.getValue()),predictor_model:recipes[title].id,model:model.getValue(),numTreesRF:Number(trees.getValue()),numTreesGBM:Number(trees.getValue()),
-   mask:forest.getValue(),start_date:start.getValue(),end_date:end.getValue(),startDateGEDI:gs.getValue(),endDateGEDI:ge.getValue(),cloudsTh:clouds.getValue(),
-   quantile:metric.indexOf('Mean')===0?'rh95':metric,gedi_type:metric.indexOf('Mean')===0?'meanGEDI':'singleGEDI',
+  var input={aoi:aoi,year:Number(start.getValue().slice(0,4)),predictor_model:recipes[title].id,model:model.getValue(),numTreesRF:Number(trees.getValue()),numTreesGBM:Number(trees.getValue()),
+   mask:maskNames[forest.getValue()],maskYear:Number(maskYear.getValue()),maskClasses:categoryWidgets.filter(function(c){return c.widget.getValue();}).map(function(c){return c.id;}),start_date:start.getValue(),end_date:end.getValue(),startDateGEDI:gs.getValue(),endDateGEDI:ge.getValue(),cloudsTh:clouds.getValue(),
+   quantile:'rh'+metric,gedi_type:average.getValue()?'meanGEDI':'singleGEDI',
    beams:beams.getValue()==='All beams'?'all':beams.getValue()==='Strong / full power'?'strong':'weak',
    acquisition:acquisition.getValue()==='Day + night'?'all':acquisition.getValue()==='Nighttime'?'nighttime':'daytime',lossGBM:loss.getValue()};
   Object.keys(hyper).forEach(function(k){input[k]=hyper[k].getValue();});var options=config.normalize(input);
@@ -1581,8 +1569,8 @@ function runMapper(){
   });
  }catch(e){fail(e.message,token);}
 }
-var run=ui.Button({label:'Run canopy height mapper',onClick:runMapper,style:{stretch:'horizontal',margin:'0',color:'#1565C0',fontWeight:'bold',fontSize:'17px'}});footer.add(run);
-var reset=ui.Button({label:'Reset',style:{stretch:'horizontal',margin:'6px 0',color:'#C62828',fontWeight:'bold',fontSize:'17px'},onClick:function(){generation++;sampleCache=null;completed=null;currentReport=null;heightLayer=null;appMap.layers().reset();results.clear();results.style().set('shown',false);setMenu(true);run.setDisabled(false);setStatus('Choose an area, then run the mapper.');}});footer.add(reset);
+var run=ui.Button({label:'Run CH-GEE',onClick:runMapper,style:{stretch:'horizontal',margin:'0',color:'#1565C0',fontWeight:'bold',fontSize:'22px'}});footer.add(run);
+var reset=ui.Button({label:'Reset CH-GEE',style:{stretch:'horizontal',margin:'6px 0',color:'#C62828',fontWeight:'bold',fontSize:'22px'},onClick:function(){generation++;sampleCache=null;completed=null;currentReport=null;heightLayer=null;appMap.layers().reset();results.clear();results.style().set('shown',false);setMenu(true);run.setDisabled(false);setStatus('');}});footer.add(reset);
 status.style().set({backgroundColor:'#36384b',fontSize:'13px',margin:'4px 0'});footer.add(status);
 sidebar.add(footer);sidebar.style().set('shown',true);mountMap();appMap.setOptions('SATELLITE');appMap.centerObject(ee.FeatureCollection(asset.getValue()));
 

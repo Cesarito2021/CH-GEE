@@ -1,7 +1,7 @@
 var bands = ['B1','B2','B3','B4','B5','B6','B7','B8','B8A','B9','B11','B12'];
 exports.bands = bands;
 exports.collection = function(year, start, end, clouds, probability, geometry) {
-  var dates = [year + '-' + start, year + '-' + end];
+  var dates = [start.length===10?start:year + '-' + start, end.length===10?end:year + '-' + end];
   var sr = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
     .filterBounds(geometry).filterDate(dates[0], dates[1])
     .filter(ee.Filter.lte('CLOUDY_PIXEL_PERCENTAGE', clouds));

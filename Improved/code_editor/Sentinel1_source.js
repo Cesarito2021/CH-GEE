@@ -4,7 +4,7 @@ exports.to_sentinel_filtered = function(opt) {
   var method = opt.composite || 'median';
   if (['mean','median'].indexOf(method) < 0) throw new Error('Invalid S1 composite');
   var params = {
-    START_DATE:opt.year + '-' + opt.start_date, STOP_DATE:opt.year + '-' + opt.end_date,
+    START_DATE:opt.start_date.length===10?opt.start_date:opt.year + '-' + opt.start_date, STOP_DATE:opt.end_date.length===10?opt.end_date:opt.year + '-' + opt.end_date,
     POLARIZATION:'VVVH', ORBIT:opt.orbit || 'BOTH', GEOMETRY:opt.aoi,
     APPLY_ADDITIONAL_BORDER_NOISE_CORRECTION:true, APPLY_SPECKLE_FILTERING:true,
     SPECKLE_FILTER_FRAMEWORK:opt.framework || 'MULTI', SPECKLE_FILTER:'GAMMA MAP',

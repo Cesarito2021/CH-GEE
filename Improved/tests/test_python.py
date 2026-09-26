@@ -10,7 +10,7 @@ from chgee import run
 class PythonInterfaceTest(ApiTestCase):
     def test_graphs_and_non_started_exports(self):
         aoi = ee.FeatureCollection([ee.Feature(ee.Geometry.Rectangle([9.29,39.24,9.30,39.25]))])
-        for predictor in ['model1','model2','model3']:
+        for predictor in ['model1','model2']:
             with patch.object(ee.data,'computeValue',return_value=100):
                 result = run(aoi, predictor_model=predictor, materialize=False)
             graph = result.image.serialize()

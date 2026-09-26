@@ -192,8 +192,8 @@ factories["users/calvites1990/CH-GEE:Sentinel2_source"]=function(exports){
 //***********************************************************************************************
  
  var calculateCompositeClip = function(year, startDate, endDate, cloudsTh, MaxCloudsProbability, mask_raster,geometry){
-  var startDateWithYear = year+"-"+startDate; // example 2017 // "08-10" // -> "2017-08-10"
-  var endDateWithYear = year+"-"+endDate;
+  var startDateWithYear = startDate.length===10?startDate:year+"-"+startDate; // example 2017 // "08-10" // -> "2017-08-10"
+  var endDateWithYear = endDate.length===10?endDate:year+"-"+endDate;
   // load and filter the S2 dataset
   var S2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', cloudsTh))
@@ -528,7 +528,7 @@ factories["users/calvites1990/CH-GEE:CH-GEE_main"]=function(exports){
 //***************************************************************************************************************
 
 var CanopyHeightMapper = function(aoi, year, start_date, end_date,startDateGEDI,endDateGEDI,cloudsTh, quantile, model, mask, gedi_type,
-numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samLingRateGBM,maxNodesGBM,lossGBM,maxNodesCART,minLeafPopCART,knownAreaHa){
+numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samLingRateGBM,maxNodesGBM,lossGBM,maxNodesCART,minLeafPopCART,knownAreaHa,userOptions){
   
   //***************************************************************************************************************
   //  Input Data
@@ -574,7 +574,7 @@ numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samL
   //***************************************************************************************************************
 
   var library10 = localRequire("users/calvites1990/CH-GEE:ForForestMasking");
-  var FNF = library10.ForestMasking(aoi2,mask);
+  var FNF = require('users/calvites1990/CH-GEE_Improved:ForForestMasking').ForestMasking(aoi2,mask,userOptions.maskYear,userOptions.maskClasses);
  
   //***************************************************************************************************************
   //  Selecting Dependent variables
@@ -585,7 +585,7 @@ numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samL
   var dataset = ee.ImageCollection("LARSE/GEDI/GEDI02_A_002_MONTHLY")
   var library2 = localRequire("users/calvites1990/CH-GEE:L2A_GEDI_source"); 
   //var gedi = library2.ToGEDI(dataset,gedi_type,startDateGEDI,endDateGEDI,quantile,FNF) 
-  var gedi = library2.ToGEDI(dataset, gedi_type, startDateGEDI, endDateGEDI,quantile, FNF, 'all', 'all');
+  var gedi = library2.ToGEDI(dataset, gedi_type, startDateGEDI, endDateGEDI,quantile, FNF, userOptions.beams, userOptions.acquisition);
   //***************************************************************************************************************
   //  Selecting Independent variables
   //***************************************************************************************************************
@@ -769,5 +769,5 @@ exports.CanopyHeightMapper = CanopyHeightMapper;
 //***************************************************** End *****************************************************
 };
 function localRequire(name){if(!factories[name])return hostRequire(name);if(!cache[name]){cache[name]={};factories[name](cache[name]);}return cache[name];}
-out.run=function(o){return localRequire('users/calvites1990/CH-GEE:CH-GEE_main').CanopyHeightMapper(o.aoi,o.year,o.start_date,o.end_date,o.startDateGEDI,o.endDateGEDI,o.cloudsTh,o.quantile,o.model,o.mask,o.gedi_type,o.numTreesRF,o.varSplitRF,o.minLeafPopuRF,o.bagFracRF,o.maxNodesRF,o.numTreesGBM,o.shrGBM,o.samLingRateGBM,o.maxNodesGBM,o.lossGBM,o.maxNodesCART,o.minLeafPopCART,o.areaHa);};
+out.run=function(o){return localRequire('users/calvites1990/CH-GEE:CH-GEE_main').CanopyHeightMapper(o.aoi,o.year,o.start_date,o.end_date,o.startDateGEDI,o.endDateGEDI,o.cloudsTh,o.quantile,o.model,o.mask,o.gedi_type,o.numTreesRF,o.varSplitRF,o.minLeafPopuRF,o.bagFracRF,o.maxNodesRF,o.numTreesGBM,o.shrGBM,o.samLingRateGBM,o.maxNodesGBM,o.lossGBM,o.maxNodesCART,o.minLeafPopCART,o.areaHa,o);};
 })(require,exports);

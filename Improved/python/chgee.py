@@ -45,11 +45,11 @@ class Result:
         return tasks
 
 
-def run(aoi, year=2019, predictor_model="model3", model="RF", node=None, materialize=True, **options):
+def run(aoi, year=2019, predictor_model="model2", model="RF", node=None, materialize=True, **options):
     """Return the 10 m exportable prediction and test outputs as EE objects.
 
     aoi: polygon asset ID, GeoJSON FeatureCollection, or ee.FeatureCollection.
-    predictor_model: model1 (original), model2 (S1/S2), model3 (AlphaEarth).
+    predictor_model: model1 (original), model2 (S1/S2 + GLO-30 + coordinates).
     options: same named settings as Config.js. Selection is fixed by predictor set.
     materialize: freeze predictor samples before fitting, as in the app (default).
         False builds a wholly deferred graph, suitable for larger batch workflows.
@@ -58,12 +58,12 @@ def run(aoi, year=2019, predictor_model="model3", model="RF", node=None, materia
     executable = node or shutil.which("node")
     if not executable:
         raise RuntimeError("Install Node.js, then run npm ci in CH-GEE_Improved.")
-    if predictor_model not in ("model1", "model2", "model3"):
-        raise ValueError("predictor_model must be model1, model2 or model3")
+    if predictor_model not in ("model1", "model2"):
+        raise ValueError("predictor_model must be model1 or model2")
     fc = ee.FeatureCollection(aoi)
     options.update(year=year, predictor_model=predictor_model, model=model)
     # The original main selects a client-side area branch. Resolve that scalar
-    # here; the other two predictor sets remain entirely deferred.
+    # here; the improved predictor set remains entirely deferred.
     if predictor_model == "model1":
         options["areaHa"] = fc.geometry().area(1).divide(10000).round().getInfo()
     payload = {"options": options, "aoi": json.loads(ee.serializer.toJSON(fc)),

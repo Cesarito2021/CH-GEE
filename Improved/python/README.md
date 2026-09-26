@@ -43,12 +43,12 @@ Run from `python/`, or add that directory to your Python import path:
 ```python
 from chgee import run
 aoi = ee.FeatureCollection("projects/your-project/assets/your-aoi")
-result = run(aoi, year=2019, predictor_model="model3", model="RF",
+result = run(aoi, year=2019, predictor_model="model2", model="RF",
              numTreesRF=500, quantile="rh95", mask="none")
 print(result.evaluate())
 ```
 
-Use `model1`, `model2` or `model3` for predictor sets; use `RF`, `GBM` or `CART`
+Use `model1` or `model2` for predictor sets; use `RF`, `GBM` or `CART`
 for the regression algorithm. Supported settings match `Config.js`. Pred 1 has
 no selection; Pred 2/3 always apply the mean-importance rule. GEDI end dates
 are exclusive. For Pred 2/3, `beams="strong"` and `acquisition="nighttime"`
@@ -69,7 +69,7 @@ until evaluated. Get map tiles with `result.image.getMapId(...)` if needed.
 
 ```python
 # Optional tasks; nothing is submitted until start=True or task.start().
-tasks = result.export_to_drive(description="CH_GEE_Pred3_2019", start=False)
+tasks = result.export_to_drive(description="CH_GEE_Pred2_2019", start=False)
 # for task in tasks: task.start()
 # print([task.status() for task in tasks])
 ```

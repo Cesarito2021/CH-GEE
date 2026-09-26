@@ -7,7 +7,7 @@ root=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(root/'python'))
 from chgee import run
 ee.Initialize(project='ee-calvites1990')
-result=run('projects/ee-calvites1990/assets/aoi_sardinia_4326',predictor_model='model3')
+result=run('projects/ee-calvites1990/assets/aoi_sardinia_4326',predictor_model='model2')
 metrics=result.evaluate()
 (root/'validation/python_pred3.json').write_text(json.dumps(metrics,indent=2))
 print(json.dumps(metrics),flush=True)

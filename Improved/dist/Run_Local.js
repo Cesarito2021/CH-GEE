@@ -4,7 +4,7 @@ var factories={},cache={};
 factories["users/calvites1990/CH-GEE_Improved:CH-GEE_main"]=function(exports){
 // CH-GEE improved library. Computation is independent of Map/ui.
 var config = localRequire('users/calvites1990/CH-GEE_Improved:Config');
-var ae = localRequire('users/calvites1990/CH-GEE_Improved:AlphaEarth');
+var terrainLib = localRequire('users/calvites1990/CH-GEE_Improved:Terrain');
 var masks = localRequire('users/calvites1990/CH-GEE_Improved:ForForestMasking');
 var gediLib = localRequire('users/calvites1990/CH-GEE_Improved:L2A_GEDI_source');
 var s2Lib = localRequire('users/calvites1990/CH-GEE_Improved:Sentinel2_source');
@@ -16,13 +16,8 @@ function geometry(aoi) {
   return ee.FeatureCollection(aoi).geometry();
 }
 function predictors(o, region) {
-  var terrain = ae.generateDEMStack30m(region, o.dem_source, 30);
+  var terrain = terrainLib.generateDEMStack30m(region, o.dem_source, 30);
   var stack, diagnostics = {};
-  if (o.dataset_option === 'GEE') {
-    var embedding = ae.generateGoogleEmbeddingStack(region, o.year, o.year);
-    stack = embedding.addBands(terrain);
-    diagnostics.embedding_bands = embedding.bandNames().size();
-  } else {
     // Build the full buffered region once. Never fill missing predictors with zero.
     var s2 = s2Lib.calculateCompositeClip(o.year, o.start_date, o.end_date,
       o.cloudsTh, o.cloudProbability, ee.Image(1), region, o.s2_composite);
@@ -33,7 +28,6 @@ function predictors(o, region) {
     stack = s2.select(s2Lib.bands).addBands(terrain).addBands(s1.composite);
     diagnostics.s2_scenes = s2.get('scene_count');
     diagnostics.s1_scenes = s1.collection.size();
-  }
   return {image:stack.addBands(ee.Image.pixelLonLat()).toFloat().clip(region), diagnostics:diagnostics};
 }
 exports.referencePoints = function(options) {
@@ -46,7 +40,7 @@ exports.referencePoints = function(options) {
   var settings=sampling.settings(base.area(1).divide(10000).round());
   var sampleRegion=region, sampleScale=o.sampleScale;
   if (o.sampling !== 'fixed') {
-    var sites=sampling.generateSamplingSites(region,settings.cellSize,1,masks.ForestMasking(region,o.mask,o.year));
+    var sites=sampling.generateSamplingSites(region,settings.cellSize,1,masks.ForestMasking(region,o.mask,o.maskYear,o.maskClasses));
     sampleRegion=ee.Geometry(ee.Algorithms.If(base.area(1).divide(10000).round().lte(4000),region,
       sites.buffer.geometry(10).intersection(region,10)));
     sampleScale=o.sampling === 'legacy' ? settings.scale : o.sampleScale;
@@ -70,7 +64,7 @@ exports.prepare = function(options, points) {
   if(o.predictor_model === 'model1') throw new Error('Use run() for the original predictor set.');
   var region = o.buffer ? geom.buffer(o.buffer, 1) : geom;
   var stack = predictors(o, region);
-  var mask = masks.ForestMasking(region, o.mask, o.year);
+  var mask = masks.ForestMasking(region, o.mask, o.maskYear, o.maskClasses);
   var image = stack.image.updateMask(mask);
   points = points || exports.referencePoints(o);
   if (o.maxReferenceHeight !== null) points = ee.FeatureCollection(points).filter(ee.Filter.lte('rh',o.maxReferenceHeight));
@@ -272,23 +266,31 @@ function date(value,name){
 exports.normalize=function(input){
  input=input||{};if(!input.aoi)throw new Error('An area of interest is required.');
  var o={aoi:input.aoi};
- o.predictor_model=choice(input.predictor_model,'model3',['model1','model2','model3'],'predictor set');
+ o.predictor_model=choice(input.predictor_model,'model2',['model1','model2'],'predictor set');
  var original=o.predictor_model==='model1';
  o.pipeline_version=original?'original':'improved';
- o.dataset_option=o.predictor_model==='model3'?'GEE':'S2S1';
+ o.dataset_option='S2S1';
  o.dem_source=original?'GMTED2010':'COPERNICUS';
  o.s1_composite=original?'mean':'median';o.s2_composite='median';
  o.selection=original?'none':'mean';o.top_n_vars=0;
  o.maxReferenceHeight=original?null:50;
- o.beams=original?'all':choice(input.beams,'all',['all','strong','weak'],'GEDI beams');
- o.acquisition=original?'all':choice(input.acquisition,'all',['all','daytime','nighttime'],'GEDI acquisition');
+ o.beams=choice(input.beams,'all',['all','strong','weak'],'GEDI beams');
+ o.acquisition=choice(input.acquisition,'all',['all','daytime','nighttime'],'GEDI time acquisition');
  o.year=number(input.year,2019,'year',2017,2100,true);
  o.model=choice(input.model,'RF',['RF','GBM','CART'],'algorithm');
  o.mask=choice(input.mask,'none',['none','FNF','DW'],'forest mask');
+ o.maskClasses=o.mask==='none'?[]:(input.maskClasses===undefined?(o.mask==='DW'?[1]:[1,2]):input.maskClasses);
+ if(!Array.isArray(o.maskClasses)|| (o.mask!=='none'&&!o.maskClasses.length))throw new Error('Select at least one land-cover category.');
+ o.maskClasses=o.maskClasses.map(function(v){return number(v,null,'land-cover category',o.mask==='DW'?0:1,o.mask==='DW'?8:4,true);});
  o.gedi_type=choice(input.gedi_type,'singleGEDI',['singleGEDI','meanGEDI'],'GEDI metric');
- o.quantile=input.quantile||'rh95';if(!/^rh(?:[1-9]|[1-9][0-9]|100)$/.test(o.quantile))throw new Error('Invalid RH metric');
+ o.quantile=input.quantile||'rh95';if(!/^rh(?:[0-9]|[1-9][0-9]|100)$/.test(o.quantile))throw new Error('Invalid RH metric');
  o.start_date=input.start_date||'04-01';o.end_date=input.end_date||'09-30';
- if(date(o.year+'-'+o.start_date,'season start')>=date(o.year+'-'+o.end_date,'season end'))throw new Error('Season end must follow start.');
+ o.start_date=date(o.start_date.length===5?o.year+'-'+o.start_date:o.start_date,'predictor start');
+ o.end_date=date(o.end_date.length===5?o.year+'-'+o.end_date:o.end_date,'predictor end');
+ if(o.start_date>=o.end_date)throw new Error('Predictor end must follow start.');
+ o.year=Number(o.start_date.slice(0,4));
+ o.maskYear=number(input.maskYear,o.year,'land-cover year',2015,2100,true);
+ if(o.mask==='FNF'&&(o.maskYear<2017||o.maskYear>2020))throw new Error('FNF4 is available for 2017–2020. Set a land-cover year in that range or use Dynamic World.');
  o.startDateGEDI=date(input.startDateGEDI||o.year+'-01-01','GEDI start');
  o.endDateGEDI=date(input.endDateGEDI||(o.year+1)+'-12-31','GEDI end');
  if(o.startDateGEDI>=o.endDateGEDI)throw new Error('GEDI end must follow start.');
@@ -306,8 +308,8 @@ exports.normalize=function(input){
 };
 
 };
-factories["users/calvites1990/CH-GEE_Improved:AlphaEarth"]=function(exports){
-// Annual AlphaEarth embeddings and terrain predictors.
+factories["users/calvites1990/CH-GEE_Improved:Terrain"]=function(exports){
+// Terrain predictors. Copernicus GLO-30 and GMTED2010.
 function geom(value) {
   return typeof value.geometry === 'function' ? value.geometry() : value;
 }
@@ -327,40 +329,24 @@ exports.generateDEMStack30m = function(boundary, source, scale) {
   return grid.addBands(ee.Terrain.slope(grid).rename('slope'))
     .addBands(ee.Terrain.aspect(grid).rename('aspect')).clip(region);
 };
-exports.generateGoogleEmbeddingStack = function(boundary, startYear, endYear) {
-  if (Number(startYear) !== Number(endYear)) throw new Error('Use one annual embedding at a time');
-  var region = geom(boundary);
-  return ee.ImageCollection('GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL').filterBounds(region)
-    .filterDate(ee.Date.fromYMD(Number(startYear),1,1), ee.Date.fromYMD(Number(startYear)+1,1,1))
-    .mosaic().clip(region);
-};
-exports.addLatLonBands = function(image, boundary) {
-  return image.addBands(ee.Image.pixelLonLat().clip(geom(boundary)));
-};
-exports.ee_build_AlphaEarth_embedding_terrain_stack = function(boundary, start, end,
-  maskOutside, scale, multiplyTerrain, addLonLat, source) {
-  var terrain = exports.generateDEMStack30m(boundary, source, scale);
-  if (multiplyTerrain) terrain = terrain.select('elevation').addBands(terrain.select(['slope','aspect']).multiply(10));
-  var image = exports.generateGoogleEmbeddingStack(boundary,start,end).addBands(terrain);
-  if (addLonLat !== false) image = exports.addLatLonBands(image,boundary);
-  return maskOutside === false ? image : image.clip(geom(boundary));
-};
-
 
 };
 factories["users/calvites1990/CH-GEE_Improved:ForForestMasking"]=function(exports){
-exports.ForestMasking = function(geometry, kind, year) {
+// Classes follow the official Earth Engine dataset catalogues.
+exports.ForestMasking = function(geometry, kind, year, classes) {
+  classes = classes || (kind === 'DW' ? [1] : [1,2]);
+  var retained = classes.map(function() { return 1; });
   if (kind === 'FNF') {
     // FNF4: 1=dense forest, 2=non-dense forest, 3=non-forest, 4=water.
     var fnf = ee.ImageCollection('JAXA/ALOS/PALSAR/YEARLY/FNF4')
       .filterBounds(geometry).filterDate(year + '-01-01', (year + 1) + '-01-01')
       .select('fnf').mosaic();
-    return fnf.eq(1).or(fnf.eq(2)).selfMask().clip(geometry);
+    return fnf.remap(classes,retained,0).selfMask().clip(geometry);
   }
   if (kind === 'DW') {
     return ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1').filterBounds(geometry)
       .filterDate(year + '-01-01', (year + 1) + '-01-01')
-      .select('label').mode().eq(1).selfMask().clip(geometry);
+      .select('label').mode().remap(classes,retained,0).selfMask().clip(geometry);
   }
   if (kind !== 'none') throw new Error('Forest mask must be none, FNF or DW');
   return ee.Image(1).clip(geometry);
@@ -404,7 +390,7 @@ factories["users/calvites1990/CH-GEE_Improved:Sentinel2_source"]=function(export
 var bands = ['B1','B2','B3','B4','B5','B6','B7','B8','B8A','B9','B11','B12'];
 exports.bands = bands;
 exports.collection = function(year, start, end, clouds, probability, geometry) {
-  var dates = [year + '-' + start, year + '-' + end];
+  var dates = [start.length===10?start:year + '-' + start, end.length===10?end:year + '-' + end];
   var sr = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
     .filterBounds(geometry).filterDate(dates[0], dates[1])
     .filter(ee.Filter.lte('CLOUDY_PIXEL_PERCENTAGE', clouds));
@@ -439,7 +425,7 @@ exports.to_sentinel_filtered = function(opt) {
   var method = opt.composite || 'median';
   if (['mean','median'].indexOf(method) < 0) throw new Error('Invalid S1 composite');
   var params = {
-    START_DATE:opt.year + '-' + opt.start_date, STOP_DATE:opt.year + '-' + opt.end_date,
+    START_DATE:opt.start_date.length===10?opt.start_date:opt.year + '-' + opt.start_date, STOP_DATE:opt.end_date.length===10?opt.end_date:opt.year + '-' + opt.end_date,
     POLARIZATION:'VVVH', ORBIT:opt.orbit || 'BOTH', GEOMETRY:opt.aoi,
     APPLY_ADDITIONAL_BORDER_NOISE_CORRECTION:true, APPLY_SPECKLE_FILTERING:true,
     SPECKLE_FILTER_FRAMEWORK:opt.framework || 'MULTI', SPECKLE_FILTER:'GAMMA MAP',
@@ -683,8 +669,8 @@ factories["users/calvites1990/CH-GEE:Sentinel2_source"]=function(exports){
 //***********************************************************************************************
  
  var calculateCompositeClip = function(year, startDate, endDate, cloudsTh, MaxCloudsProbability, mask_raster,geometry){
-  var startDateWithYear = year+"-"+startDate; // example 2017 // "08-10" // -> "2017-08-10"
-  var endDateWithYear = year+"-"+endDate;
+  var startDateWithYear = startDate.length===10?startDate:year+"-"+startDate; // example 2017 // "08-10" // -> "2017-08-10"
+  var endDateWithYear = endDate.length===10?endDate:year+"-"+endDate;
   // load and filter the S2 dataset
   var S2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', cloudsTh))
@@ -1019,7 +1005,7 @@ factories["users/calvites1990/CH-GEE:CH-GEE_main"]=function(exports){
 //***************************************************************************************************************
 
 var CanopyHeightMapper = function(aoi, year, start_date, end_date,startDateGEDI,endDateGEDI,cloudsTh, quantile, model, mask, gedi_type,
-numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samLingRateGBM,maxNodesGBM,lossGBM,maxNodesCART,minLeafPopCART,knownAreaHa){
+numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samLingRateGBM,maxNodesGBM,lossGBM,maxNodesCART,minLeafPopCART,knownAreaHa,userOptions){
   
   //***************************************************************************************************************
   //  Input Data
@@ -1065,7 +1051,7 @@ numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samL
   //***************************************************************************************************************
 
   var library10 = localRequire("users/calvites1990/CH-GEE:ForForestMasking");
-  var FNF = library10.ForestMasking(aoi2,mask);
+  var FNF = localRequire('users/calvites1990/CH-GEE_Improved:ForForestMasking').ForestMasking(aoi2,mask,userOptions.maskYear,userOptions.maskClasses);
  
   //***************************************************************************************************************
   //  Selecting Dependent variables
@@ -1076,7 +1062,7 @@ numTreesRF,varSplitRF,minLeafPopuRF,bagFracRF,maxNodesRF,numTreesGBM,shrGBM,samL
   var dataset = ee.ImageCollection("LARSE/GEDI/GEDI02_A_002_MONTHLY")
   var library2 = localRequire("users/calvites1990/CH-GEE:L2A_GEDI_source"); 
   //var gedi = library2.ToGEDI(dataset,gedi_type,startDateGEDI,endDateGEDI,quantile,FNF) 
-  var gedi = library2.ToGEDI(dataset, gedi_type, startDateGEDI, endDateGEDI,quantile, FNF, 'all', 'all');
+  var gedi = library2.ToGEDI(dataset, gedi_type, startDateGEDI, endDateGEDI,quantile, FNF, userOptions.beams, userOptions.acquisition);
   //***************************************************************************************************************
   //  Selecting Independent variables
   //***************************************************************************************************************
@@ -1260,7 +1246,7 @@ exports.CanopyHeightMapper = CanopyHeightMapper;
 //***************************************************** End *****************************************************
 };
 function localRequire(name){if(!factories[name])return hostRequire(name);if(!cache[name]){cache[name]={};factories[name](cache[name]);}return cache[name];}
-out.run=function(o){return localRequire('users/calvites1990/CH-GEE:CH-GEE_main').CanopyHeightMapper(o.aoi,o.year,o.start_date,o.end_date,o.startDateGEDI,o.endDateGEDI,o.cloudsTh,o.quantile,o.model,o.mask,o.gedi_type,o.numTreesRF,o.varSplitRF,o.minLeafPopuRF,o.bagFracRF,o.maxNodesRF,o.numTreesGBM,o.shrGBM,o.samLingRateGBM,o.maxNodesGBM,o.lossGBM,o.maxNodesCART,o.minLeafPopCART,o.areaHa);};
+out.run=function(o){return localRequire('users/calvites1990/CH-GEE:CH-GEE_main').CanopyHeightMapper(o.aoi,o.year,o.start_date,o.end_date,o.startDateGEDI,o.endDateGEDI,o.cloudsTh,o.quantile,o.model,o.mask,o.gedi_type,o.numTreesRF,o.varSplitRF,o.minLeafPopuRF,o.bagFracRF,o.maxNodesRF,o.numTreesGBM,o.shrGBM,o.samLingRateGBM,o.maxNodesGBM,o.lossGBM,o.maxNodesCART,o.minLeafPopCART,o.areaHa,o);};
 })(require,exports);
 
 };
@@ -1363,7 +1349,7 @@ function localRequire(n){if(!factories[n])return hostRequire(n);if(!cache[n]){ca
 var mapper=localRequire('users/calvites1990/CH-GEE_Improved:CH-GEE_main');
 var plots=localRequire('users/calvites1990/CH-GEE_Improved:ForPlots');
 var aoi=ee.FeatureCollection('projects/ee-calvites1990/assets/aoi_sardinia_4326'); // Replace with your polygon asset.
-mapper.runAsync({aoi:aoi,year:2019,predictor_model:'model3',model:'RF',numTreesRF:500,mask:'none'},function(result,error){
+mapper.runAsync({aoi:aoi,year:2019,predictor_model:'model2',model:'RF',numTreesRF:500,mask:'none'},function(result,error){
 if(error){print('Unable to complete',error);return;}
 Map.centerObject(aoi);
 Map.addLayer(result.image,{min:0,max:30,palette:plots.palettes.Viridis},'Canopy height (m)');

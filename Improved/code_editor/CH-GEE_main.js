@@ -1,6 +1,6 @@
 // CH-GEE improved library. Computation is independent of Map/ui.
 var config = require('users/calvites1990/CH-GEE_Improved:Config');
-var ae = require('users/calvites1990/CH-GEE_Improved:AlphaEarth');
+var terrainLib = require('users/calvites1990/CH-GEE_Improved:Terrain');
 var masks = require('users/calvites1990/CH-GEE_Improved:ForForestMasking');
 var gediLib = require('users/calvites1990/CH-GEE_Improved:L2A_GEDI_source');
 var s2Lib = require('users/calvites1990/CH-GEE_Improved:Sentinel2_source');
@@ -12,13 +12,8 @@ function geometry(aoi) {
   return ee.FeatureCollection(aoi).geometry();
 }
 function predictors(o, region) {
-  var terrain = ae.generateDEMStack30m(region, o.dem_source, 30);
+  var terrain = terrainLib.generateDEMStack30m(region, o.dem_source, 30);
   var stack, diagnostics = {};
-  if (o.dataset_option === 'GEE') {
-    var embedding = ae.generateGoogleEmbeddingStack(region, o.year, o.year);
-    stack = embedding.addBands(terrain);
-    diagnostics.embedding_bands = embedding.bandNames().size();
-  } else {
     // Build the full buffered region once. Never fill missing predictors with zero.
     var s2 = s2Lib.calculateCompositeClip(o.year, o.start_date, o.end_date,
       o.cloudsTh, o.cloudProbability, ee.Image(1), region, o.s2_composite);
@@ -29,7 +24,6 @@ function predictors(o, region) {
     stack = s2.select(s2Lib.bands).addBands(terrain).addBands(s1.composite);
     diagnostics.s2_scenes = s2.get('scene_count');
     diagnostics.s1_scenes = s1.collection.size();
-  }
   return {image:stack.addBands(ee.Image.pixelLonLat()).toFloat().clip(region), diagnostics:diagnostics};
 }
 exports.referencePoints = function(options) {
@@ -42,7 +36,7 @@ exports.referencePoints = function(options) {
   var settings=sampling.settings(base.area(1).divide(10000).round());
   var sampleRegion=region, sampleScale=o.sampleScale;
   if (o.sampling !== 'fixed') {
-    var sites=sampling.generateSamplingSites(region,settings.cellSize,1,masks.ForestMasking(region,o.mask,o.year));
+    var sites=sampling.generateSamplingSites(region,settings.cellSize,1,masks.ForestMasking(region,o.mask,o.maskYear,o.maskClasses));
     sampleRegion=ee.Geometry(ee.Algorithms.If(base.area(1).divide(10000).round().lte(4000),region,
       sites.buffer.geometry(10).intersection(region,10)));
     sampleScale=o.sampling === 'legacy' ? settings.scale : o.sampleScale;
@@ -66,7 +60,7 @@ exports.prepare = function(options, points) {
   if(o.predictor_model === 'model1') throw new Error('Use run() for the original predictor set.');
   var region = o.buffer ? geom.buffer(o.buffer, 1) : geom;
   var stack = predictors(o, region);
-  var mask = masks.ForestMasking(region, o.mask, o.year);
+  var mask = masks.ForestMasking(region, o.mask, o.maskYear, o.maskClasses);
   var image = stack.image.updateMask(mask);
   points = points || exports.referencePoints(o);
   if (o.maxReferenceHeight !== null) points = ee.FeatureCollection(points).filter(ee.Filter.lte('rh',o.maxReferenceHeight));

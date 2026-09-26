@@ -2,28 +2,15 @@
 
 ## CH-GEE Improved — new single-map version
 
-The separate [Improved release](Improved/README.md) adds three predictor sets:
-the original Sentinel-1/2 + GMTED workflow, Sentinel-1/2 + Copernicus terrain +
-coordinates, and annual AlphaEarth + terrain + coordinates. The latter two
-use buffered sampling and training-only mean-importance selection. The single-map
-UI retains the CH-GEE colours and expandable sections. Downloads are available
-through the functions, not through the viewing UI. This release excludes conformal.
+The separate [Improved release](Improved/README.md) provides two predictor sets:
+the original Sentinel-1/2 + GMTED workflow and Sentinel-1/2 + GLO-30 terrain +
+coordinates, with buffered sampling and training-only variable selection for Pred 2.
+The app displays maps and diagnostics; the Code Editor function provides Drive exports.
 
 Start with [account access, AOI setup and the new function](Improved/README.md).
 Open the [Improved Earth Engine scripts](https://code.earthengine.google.com/?accept_repo=users/calvites1990/CH-GEE_Improved)
 if shared with you, or paste [the standalone app](Improved/dist/CH-GEE.js) into a new Code Editor script.
 The existing published app linked below remains the original version.
-
-### Three-predictor overview
-
-![Square nine-panel overview: canopy-height maps, testing scatter plots and variable importance for three predictor sets](Improved/figures/predictor_overview.png)
-
-Columns show Pred 1, Pred 2 and Pred 3. Rows show canopy height, held-out GEDI
-scatter plots and relative variable importance (top 15). The maps use the same
-6 × 6 km square crop of the AOI, Viridis and a common height scale. Model fitting
-and evaluation use the full study area. These are fresh Python-interface outputs;
-each workflow has its own testing set, so the figure is illustrative rather than
-a controlled ranking. [Figure details and PDF](Improved/figures/README.md).
 
 ### Main code — Google Earth Engine
 
@@ -33,8 +20,9 @@ var aoi = ee.FeatureCollection('projects/your-project/assets/your-aoi');
 
 var options = {
   aoi: aoi,
-  year: 2019,
-  predictor_model: 'model3', // model1, model2 or model3
+  start_date: '2019-04-01',
+  end_date: '2019-09-30',
+  predictor_model: 'model2', // model1 or model2
   model: 'RF',              // RF, GBM or CART
   numTreesRF: 500,
   quantile: 'rh95',
@@ -70,8 +58,9 @@ aoi = ee.FeatureCollection("projects/your-project/assets/your-aoi")
 
 result = run(
     aoi,
-    year=2019,
-    predictor_model="model3",  # model1, model2 or model3
+    start_date="2019-04-01",
+    end_date="2019-09-30",
+    predictor_model="model2",  # model1 or model2
     model="RF",               # RF, GBM or CART
     numTreesRF=500,
     quantile="rh95",
@@ -84,7 +73,7 @@ canopy_height = result.image
 print(result.evaluate())
 
 # Optional 10 m Drive export; start only when required.
-# tasks = result.export_to_drive(description="CH_GEE_Pred3_2019", start=True)
+# tasks = result.export_to_drive(description="CH_GEE_Pred2_2019", start=True)
 ```
 
 ## User Interface

@@ -4,7 +4,19 @@ ee.data.getAlgorithms=()=>JSON.parse(fs.readFileSync(path.join(__dirname,'algori
 ee.data.computeValue=()=>{throw new Error('Unexpected server request');};
 const cache={};function load(name){if(cache[name])return cache[name];const file=name.startsWith('users/adugnagirma/')?path.join(root,'vendor/gee_s1_ard',name.split(':')[1]+'.js'):path.join(root,name.split(':').pop()+'.js');const c={ee,require:load,exports:{},print(){}};vm.runInNewContext(fs.readFileSync(file,'utf8'),c,{filename:file});return cache[name]=c.exports;}
 const config=load('Config'),main=load('CH-GEE_main'),aoi=ee.FeatureCollection([ee.Feature(ee.Geometry.Rectangle([9.29,39.24,9.30,39.25]))]);
-for(const predictor_model of ['model1','model2','model3']){
+assert.throws(()=>config.normalize({aoi,predictor_model:'model3'}),/predictor set/);
+assert.throws(()=>config.normalize({aoi,mask:'DW',maskClasses:[]}),/category/);
+assert.throws(()=>config.normalize({aoi,mask:'FNF',maskClasses:[0]}),/category/);
+assert.throws(()=>config.normalize({aoi,start_date:'2020-02-30'}),/predictor start/);
+const dates=config.normalize({aoi,start_date:'2019-11-01',end_date:'2020-03-01',quantile:'rh0',mask:'DW',maskClasses:[1,5]});
+assert.equal(dates.end_date,'2020-03-01');assert.equal(dates.quantile,'rh0');
+for(const predictor_model of ['model1','model2']){
+ const graph=ee.Serializer.toJSON(main.run({...dates,predictor_model,areaHa:100,beams:'strong',acquisition:'nighttime'}).image);
+ assert.ok(graph.includes('GOOGLE/DYNAMICWORLD/V1')&&graph.includes('Image.remap'));
+ assert.ok(graph.includes('rh0')&&graph.includes('solar_elevation'));
+ assert.ok(!graph.includes('SATELLITE_EMBEDDING'));
+}
+for(const predictor_model of ['model1','model2']){
  const o=config.normalize({aoi,predictor_model,areaHa:100});
  assert.equal(o.selection,predictor_model==='model1'?'none':'mean');
  assert.equal(o.trainFraction,.7);assert.equal(o.sampling,'legacy');
@@ -19,8 +31,8 @@ for(const predictor_model of ['model1','model2','model3']){
   assert.ok(ee.Serializer.toJSON(ee.Deserializer.fromJSON(ee.Serializer.toJSON(r.image))).includes('Image.classify'));
  }
 }
-const py=require('child_process').spawnSync(process.execPath,[path.join(root,'python/graph.cjs')],{input:JSON.stringify({options:{predictor_model:'model3',year:2019},aoi:JSON.parse(ee.Serializer.toJSON(aoi)),algorithms:ee.data.getAlgorithms()}),encoding:'utf8',maxBuffer:50*1024*1024});
+const py=require('child_process').spawnSync(process.execPath,[path.join(root,'python/graph.cjs')],{input:JSON.stringify({options:{predictor_model:'model2',year:2019},aoi:JSON.parse(ee.Serializer.toJSON(aoi)),algorithms:ee.data.getAlgorithms()}),encoding:'utf8',maxBuffer:50*1024*1024});
 assert.equal(py.status,0,py.stderr);const graphs=JSON.parse(py.stdout);
-assert.deepEqual(graphs.image,JSON.parse(ee.Serializer.toJSON(main.run({aoi,predictor_model:'model3',year:2019}).image)));
-console.log('PASS: 9 full graphs including vendored S1 ARD; fixed predictor policies; serialization parity; Python bridge parity.');
+assert.deepEqual(graphs.image,JSON.parse(ee.Serializer.toJSON(main.run({aoi,predictor_model:'model2',year:2019}).image)));
+console.log('PASS: 6 full graphs including vendored S1 ARD; fixed predictor policies; serialization parity; Python bridge parity.');
 
